@@ -1,1 +1,2046 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GTD</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Themes ── */
+/* Dark: softer than pure black — comfortable for long sessions */
+[data-theme="dark"]{
+  --bg:#111318;--bg2:#1a1f2e;--bg3:#222a3f;--border:#2e3f5c;
+  --text:#cdd8ea;--text-dim:#526070;--text-mid:#8aa0bc;
+  --accent:#4fa8ff;--accent2:#9966ff;--green:#30d87a;--orange:#ff8c42;--red:#ff3d5a;--yellow:#f5c040;
+  --shadow:0 4px 24px #00000077;
+}
+/* Dark HC: pure black for OLED / accessibility */
+[data-theme="dark-hc"]{
+  --bg:#000000;--bg2:#060810;--bg3:#0c1220;--border:#304060;
+  --text:#ffffff;--text-dim:#7090b8;--text-mid:#b0ccee;
+  --accent:#60b8ff;--accent2:#bb88ff;--green:#44ff88;--orange:#ffb044;--red:#ff4466;--yellow:#ffee44;
+  --shadow:0 4px 24px #000000aa;
+}
+[data-theme="light"]{
+  --bg:#eef2f8;--bg2:#ffffff;--bg3:#e0e8f4;--border:#b8c8e0;
+  --text:#121a2c;--text-dim:#5870a0;--text-mid:#2a4070;
+  --accent:#1060d8;--accent2:#5020c0;--green:#0a8840;--orange:#b85010;--red:#c01030;--yellow:#906000;
+  --shadow:0 4px 20px #00000020;
+}
+[data-theme="light-hc"]{
+  --bg:#ffffff;--bg2:#f4f4f4;--bg3:#e4e4ec;--border:#607090;
+  --text:#000000;--text-dim:#304060;--text-mid:#101828;
+  --accent:#0040cc;--accent2:#3800aa;--green:#005520;--orange:#662200;--red:#990011;--yellow:#554400;
+  --shadow:0 4px 20px #00000030;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;display:flex;flex-direction:column;transition:background .2s,color .2s}
+button{cursor:pointer;border:none;background:none;font:inherit;color:inherit}
+input,textarea,select{font:inherit;color:var(--text);background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;outline:none;transition:border-color .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
+/* ── Header ── */
+#hdr{display:flex;align-items:center;gap:10px;padding:0 14px;height:50px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+#logo{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;color:var(--accent);letter-spacing:.08em;white-space:nowrap}
+#qc-wrap{flex:1;max-width:400px;display:flex;gap:4px;align-items:center}
+#q-inp{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px}
+#q-inp::placeholder{color:var(--text-dim)}
+#qc-plus{width:30px;height:30px;border:1px solid var(--border);border-radius:50%;font-size:19px;color:var(--text-dim);display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;flex-shrink:0}
+#qc-plus:hover{border-color:var(--accent);color:var(--accent)}
+#hdr-stats{display:flex;gap:12px;margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px}
+.hstat{display:flex;flex-direction:column;align-items:center}
+.hstat-v{font-size:15px;font-weight:500}.hstat-l{color:var(--text-dim);font-size:9px;letter-spacing:.06em}
+.c-r{color:var(--red)}.c-g{color:var(--green)}
+#theme-btn{padding:3px 8px;border:1px solid var(--border);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);white-space:nowrap;transition:all .15s;flex-shrink:0}
+#theme-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Tabs ── */
+#tabs{display:flex;align-items:center;padding:0 10px;height:40px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;overflow-x:auto}
+.tab{padding:0 13px;height:100%;display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);border-bottom:2px solid transparent;transition:color .15s,border-color .15s;white-space:nowrap}
+.tab:hover{color:var(--text)}.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ── Content ── */
+#content{flex:1;overflow:hidden;display:flex}
+.pane{display:none;flex:1;overflow:hidden;flex-direction:column}
+.pane.active{display:flex}
+.pane-bar{padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--bg2);flex-shrink:0}
+.pane-title{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid)}
+
+/* ── Day nav ── */
+.day-nav-bar{display:flex;align-items:center;gap:6px;padding:6px 12px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap}
+.day-btn,.nav-arr,.filter-btn{padding:3px 10px;border:1px solid var(--border);border-radius:20px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);transition:all .15s}
+.nav-arr{width:26px;height:26px;padding:0;display:flex;align-items:center;justify-content:center;font-size:14px;border-radius:6px}
+.day-btn:hover,.nav-arr:hover,.filter-btn:hover{border-color:var(--text-mid);color:var(--text)}
+.day-btn.active,.filter-btn.active{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.nav-arr:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Day view: equal-width columns ── */
+.today-layout{flex:1;overflow:hidden;display:flex}
+/* Each column takes 50% — events and tasks get equal space */
+.today-left{flex:1;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.today-right{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* ── Time-slot schedule (left column) ── */
+.sched-wrap{flex:1;overflow-y:auto;position:relative}
+.sched-grid{position:relative;min-height:100%}
+.sched-hour{display:flex;align-items:flex-start;border-bottom:1px solid color-mix(in srgb,var(--border) 50%,transparent)}
+.sched-hour-lbl{width:40px;flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-dim);padding:2px 4px;text-align:right;line-height:1}
+.sched-hour-line{flex:1;position:relative}
+.sched-now-line{position:absolute;left:0;right:0;height:2px;background:var(--red);z-index:10;pointer-events:none}
+.sched-now-line::before{content:'';position:absolute;left:-3px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--red)}
+/* All-day / multi-day events shown in a banner at the top */
+.sched-allday{padding:4px 8px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.sched-allday-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:1px}
+/* Positioned timed event blocks */
+.sched-ev-block{position:absolute;left:44px;right:4px;border-radius:5px;border-left:3px solid var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--bg2));padding:2px 5px;font-size:11px;overflow:hidden;cursor:pointer;transition:filter .12s;z-index:5}
+.sched-ev-block:hover{filter:brightness(1.15)}
+.sched-ev-block .ev-t{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-dim)}
+.sched-ev-allday-chip{padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;border-left:3px solid var(--accent);background:color-mix(in srgb,var(--accent) 15%,var(--bg3));transition:filter .12s}
+.sched-ev-allday-chip:hover{filter:brightness(1.12)}
+
+/* Date hero is now inline in the left pane-bar */
+.date-hero-inline{display:flex;align-items:baseline;gap:8px;flex-shrink:0}
+.dh-num{font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:300;line-height:1}
+.dh-mon{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-mid)}
+.dh-day{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em}
+.add-ev-btn{flex-shrink:0;padding:3px 10px;border:1px dashed var(--border);border-radius:6px;color:var(--text-dim);font-size:11px;transition:all .15s;margin-left:auto}
+.add-ev-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tasks-scroll{flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:5px}
+
+/* ── Task card ── */
+.task-card{display:grid;grid-template-columns:24px 1fr auto;gap:7px;align-items:start;padding:8px 10px;background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:6px;cursor:pointer;transition:border-color .12s}
+.task-card:hover{border-color:var(--text-mid)}
+.task-card.overdue{background:color-mix(in srgb,var(--red) 7%,var(--bg2))}
+.task-cb{width:20px;height:20px;border:2px solid var(--border);border-radius:4px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:var(--bg3)}
+.task-cb:hover{border-color:var(--green);background:color-mix(in srgb,var(--green) 15%,var(--bg3))}
+.task-cb.done{border-color:var(--green);background:var(--green)}
+.task-cb.done::after{content:'✓';color:var(--bg);font-size:12px;font-weight:700}
+.task-body{min-width:0;overflow-wrap:break-word;word-break:break-word}
+.task-title{font-size:13px;line-height:1.35}
+.task-prev{font-size:11px;color:var(--text-dim);margin-top:2px;font-family:'IBM Plex Mono',monospace;overflow-wrap:break-word;word-break:break-word}
+.task-meta{display:flex;gap:5px;align-items:center;margin-top:3px;flex-wrap:wrap}
+.task-dl{font-family:'IBM Plex Mono',monospace;font-size:10px}
+.task-dl.urg{color:var(--red)}.task-dl.soon{color:var(--orange)}.task-dl.ok{color:var(--text-dim)}
+.task-ef{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim)}
+.tag-p{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:1px 5px;border-radius:3px;background:var(--bg3);color:var(--text-dim);border:1px solid var(--border)}
+.task-acts{display:flex;flex-direction:column;gap:2px;align-items:flex-end;flex-shrink:0}
+.task-urg{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);padding:1px 5px;border-radius:3px;background:var(--bg3);border:1px solid var(--border);white-space:nowrap}
+.task-ab{font-size:13px;color:var(--text-dim);transition:color .1s;padding:2px;line-height:1}
+.task-ab:hover{color:var(--text)}
+
+/* ── Week ── */
+.wk-nav{display:flex;align-items:center;gap:6px;margin-left:auto}
+.wk-lbl{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-mid)}
+.wk-grid{flex:1;overflow:hidden;display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border)}
+.wk-col{background:var(--bg);display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.wk-hdr{padding:6px 5px 4px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;transition:background .15s}
+.wk-hdr:hover{background:var(--bg3)}
+.wk-hdr.today{background:color-mix(in srgb,var(--accent) 14%,var(--bg2))}
+.wk-hdr.today .wk-num{color:var(--accent)}
+.wk-dname{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim)}
+.wk-num{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:300;line-height:1.1}
+.wk-allday{border-bottom:1px solid var(--border);padding:2px 3px;display:flex;flex-direction:column;gap:2px;background:var(--bg2);min-height:4px}
+.wk-allday-ev{font-size:10px;padding:2px 5px;border-radius:2px;background:color-mix(in srgb,var(--cat-color,var(--accent)) 18%,var(--bg2));color:var(--text-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:2px solid var(--cat-color,var(--accent))}
+.wk-allday-ev.cont-l{border-left:none;border-radius:0 2px 2px 0}
+.wk-allday-ev.cont-r{border-right:none;border-radius:2px 0 0 2px}
+.wk-allday-ev.cont-lr{border-left:none;border-right:none;border-radius:0}
+.wk-body{flex:1;overflow-y:auto;padding:4px;display:flex;flex-direction:column;gap:3px}
+.wk-ev{padding:3px 5px;border-radius:3px;background:color-mix(in srgb,var(--cat-color,var(--accent)) 15%,var(--bg));border-left:2px solid var(--cat-color,var(--accent));font-size:11px;line-height:1.3;word-break:break-word;cursor:pointer}
+.wk-ev-t{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-dim)}
+.wk-task{padding:3px 5px;border-radius:3px;background:var(--bg2);border:1px solid var(--border);font-size:11px;display:flex;gap:3px;align-items:flex-start;word-break:break-word;cursor:pointer}
+.wk-dot{width:5px;height:5px;border-radius:50%;margin-top:4px;flex-shrink:0;background:var(--cat-color,var(--accent2))}
+
+/* ── Month ── */
+.mo-nav{display:flex;align-items:center;gap:8px;margin-left:auto}
+.mo-lbl{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text-mid)}
+.mo-grid{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.mo-dow-hdr{display:grid;grid-template-columns:repeat(7,1fr);background:var(--bg2);border-bottom:1px solid var(--border)}
+.mo-dow{padding:5px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)}
+.mo-rows{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.mo-wk-row{display:grid;grid-template-columns:repeat(7,1fr);flex:1;min-height:80px;border-bottom:1px solid var(--border)}
+.mo-day{border-right:1px solid var(--border);padding:3px;overflow:hidden;cursor:pointer;transition:background .12s;min-height:80px}
+.mo-day:last-child{border-right:none}
+.mo-day:hover{background:var(--bg3)}
+.mo-day.today{background:color-mix(in srgb,var(--accent) 10%,var(--bg))}
+.mo-day.other-mo{opacity:.4}
+.mo-day-num{font-family:'IBM Plex Mono',monospace;font-size:11px;margin-bottom:2px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.mo-day.today .mo-day-num{background:var(--accent);color:var(--bg);font-weight:500}
+.mo-item{font-size:10px;padding:1px 4px;border-radius:2px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mo-item.ev{background:color-mix(in srgb,var(--cat-color,var(--accent)) 22%,var(--bg));border-left:2px solid var(--cat-color,var(--accent))}
+.mo-item.ev.multiday{border-left:none;border-radius:0 2px 2px 0}
+.mo-item.task{background:var(--bg3);border:1px solid var(--border)}
+.mo-item.overdue{color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,var(--border))}
+
+/* ── Tasks toolbar ── */
+.tasks-toolbar{display:flex;gap:5px;flex-wrap:wrap;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.filter-sep{width:1px;height:18px;background:var(--border);flex-shrink:0}
+.tasks-list{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:5px}
+.add-fab{position:fixed;bottom:20px;right:20px;width:44px;height:44px;border-radius:50%;background:var(--accent);color:white;font-size:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px color-mix(in srgb,var(--accent) 50%,transparent);transition:transform .15s;z-index:100}
+.add-fab:hover{transform:scale(1.08)}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:#00000099;display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .15s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;width:500px;max-width:95vw;max-height:92vh;overflow-y:auto;transform:translateY(8px);transition:transform .15s;box-shadow:var(--shadow)}
+.modal-overlay.open .modal{transform:translateY(0)}
+.m-title{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-mid);margin-bottom:14px}
+.f-row{display:flex;flex-direction:column;gap:3px;margin-bottom:11px}
+.f-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)}
+.f-row input,.f-row select,.f-row textarea{width:100%}
+.f-row textarea{min-height:55px;resize:vertical}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.m-acts{display:flex;gap:7px;justify-content:flex-end;margin-top:14px}
+.btn{padding:6px 15px;border-radius:6px;font-size:13px;font-weight:500;transition:all .15s}
+.btn-p{background:var(--accent);color:white}.btn-p:hover{filter:brightness(1.12)}
+.btn-g{border:1px solid var(--border);color:var(--text-mid)}.btn-g:hover{border-color:var(--text-mid);color:var(--text)}
+.btn-d{border:1px solid color-mix(in srgb,var(--red) 50%,transparent);color:var(--red)}.btn-d:hover{background:color-mix(in srgb,var(--red) 15%,transparent)}
+
+/* ── Time picker ── */
+.time-section{display:flex;flex-direction:column;gap:8px}
+.time-allday{display:flex;align-items:center;gap:8px;font-size:13px}
+.time-allday input{width:auto}
+.time-pickers{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tp-group{display:flex;flex-direction:column;gap:6px}
+.tp-label{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)}
+.tp-text{width:80px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:15px;letter-spacing:.05em}
+.tp-scroll-wrap{display:flex;align-items:center;gap:3px;position:relative;height:144px}
+.tp-scroll-wrap .sp-hl{position:absolute;top:54px;left:0;right:0;height:36px;background:color-mix(in srgb,var(--accent) 12%,var(--bg2));border-top:1px solid var(--border);border-bottom:1px solid var(--border);pointer-events:none;border-radius:4px;z-index:1}
+.sp-col{height:144px;width:44px;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;position:relative;z-index:2}
+.sp-col::-webkit-scrollbar{display:none}
+.sp-item{height:36px;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:17px;scroll-snap-align:center;color:var(--text-dim);user-select:none}
+.sp-sep{font-family:'IBM Plex Mono',monospace;font-size:22px;color:var(--text-mid);z-index:2;position:relative;flex-shrink:0}
+.tp-row{display:flex;align-items:center;gap:6px}
+
+/* ── Recur ── */
+.recur-box{border:1px solid var(--border);border-radius:6px;padding:10px;margin-top:6px;display:none}
+.recur-box.open{display:block}
+.recur-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:7px}
+.recur-row label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim)}
+.recur-row input[type=number]{width:54px}
+.wd-btn{width:26px;height:26px;border:1px solid var(--border);border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);display:flex;align-items:center;justify-content:center;transition:all .12s}
+.wd-btn.on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,transparent)}
+
+/* ── Recurring edit dialog ── */
+.red-dialog{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;width:360px;max-width:95vw;box-shadow:var(--shadow)}
+.red-t{font-weight:600;font-size:14px;margin-bottom:5px}
+.red-s{font-size:12px;color:var(--text-mid);margin-bottom:14px}
+.red-opts{display:flex;flex-direction:column;gap:7px}
+.red-opt{padding:9px 13px;border:1px solid var(--border);border-radius:6px;text-align:left;font-size:13px;transition:all .15s}
+.red-opt:hover{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+
+/* ── Category modal ── */
+.cat-row{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border)}
+.cat-row:last-child{border-bottom:none}
+.cat-color-swatch{width:20px;height:20px;border-radius:4px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;transition:border-color .12s}
+.cat-color-swatch:hover{border-color:var(--text-mid)}
+.cat-name-inp{flex:1;background:transparent;border:none;font-size:13px;padding:2px 4px;border-radius:3px}
+.cat-name-inp:focus{outline:none;background:var(--bg3)}
+.cat-default-btn{font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 6px;border:1px solid var(--border);border-radius:10px;color:var(--text-dim);transition:all .12s;flex-shrink:0}
+.cat-default-btn.is-default{border-color:var(--green);color:var(--green)}
+.cat-default-btn:hover{border-color:var(--text-mid);color:var(--text)}
+/* Color palette popup */
+.color-palette{position:fixed;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px;display:grid;grid-template-columns:repeat(5,22px);gap:4px;z-index:500;box-shadow:var(--shadow);display:none}
+.color-palette.open{display:grid}
+.cp-swatch{width:22px;height:22px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:border-color .1s,transform .1s}
+.cp-swatch:hover,.cp-swatch.active{border-color:var(--text);transform:scale(1.12)}
+
+/* ── Journal ── */
+.j-layout{flex:1;display:flex;overflow:hidden}
+.j-sb{width:190px;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.j-sb-hdr{padding:8px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.j-sb-hdr input{width:100%;font-size:12px}
+.j-date-list{flex:1;overflow-y:auto;padding:5px 0}
+.j-date-item{padding:5px 11px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);cursor:pointer;transition:all .1s;border-left:2px solid transparent}
+.j-date-item:hover{color:var(--text);background:var(--bg3)}
+.j-date-item.active{color:var(--accent);border-left-color:var(--accent)}
+.j-sr-res{flex:1;overflow-y:auto;display:none}
+.j-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.j-datebar{padding:7px 14px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.j-cur-date{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500}
+.j-save-st{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim)}
+.j-ew{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.editor-area{flex:1;overflow:hidden;position:relative}
+.editor-ta,.n-ta{width:100%;height:100%;background:transparent;border:none;resize:none;font-family:'IBM Plex Mono',monospace;font-size:13.5px;line-height:1.85;color:var(--text);padding:16px 20px}
+.editor-ta:focus,.n-ta:focus{outline:none}
+.editor-ta::placeholder,.n-ta::placeholder{color:var(--text-dim)}
+.preview-pane{display:none;width:100%;height:100%;overflow-y:auto;padding:16px 20px;font-family:'IBM Plex Mono',monospace;font-size:13.5px;line-height:1.85;white-space:pre-wrap;word-break:break-word}
+.preview-pane.active{display:block}
+.p-link{color:var(--accent);cursor:pointer;text-decoration:underline;text-decoration-style:dotted}
+.p-link:hover{text-decoration-style:solid}
+.p-tag{color:var(--accent2);cursor:pointer}
+.p-tag:hover{text-decoration:underline}
+.ep-toggle{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 9px;border:1px solid var(--border);border-radius:4px;color:var(--text-dim);transition:all .15s}
+.ep-toggle.active,.ep-toggle:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Tags panel ── */
+.tags-panel{padding:6px 12px;border-top:1px solid var(--border);background:var(--bg2);display:flex;gap:5px;flex-wrap:wrap;align-items:center;flex-shrink:0;min-height:32px}
+.tp-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);white-space:nowrap;letter-spacing:.06em}
+.tp-tag{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 7px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text-dim);cursor:pointer;transition:all .12s}
+.tp-tag:hover{border-color:var(--accent);color:var(--accent)}
+.tp-tag.recent{border-color:color-mix(in srgb,var(--accent) 30%,var(--border));color:var(--text-mid)}
+
+/* ── Notes: tab bar + navigation ── */
+.n-layout{flex:1;display:flex;overflow:hidden}
+.n-sb{width:225px;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.n-sb-bar{padding:7px 9px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;gap:5px;align-items:center}
+.n-sb-bar input{flex:1;font-size:12px}
+.n-sb-bar button{width:27px;height:27px;border:1px solid var(--border);border-radius:6px;font-size:16px;color:var(--text-dim);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.n-sb-bar button:hover{border-color:var(--accent);color:var(--accent)}
+.n-tag-bar{padding:5px 9px;border-bottom:1px solid var(--border);display:flex;gap:3px;flex-wrap:wrap;background:var(--bg2);min-height:30px}
+.n-list{flex:1;overflow-y:auto;padding:5px 0}
+.n-item{padding:7px 11px;cursor:pointer;border-left:2px solid transparent;transition:all .1s}
+.n-item:hover{background:var(--bg3)}.n-item.active{border-left-color:var(--accent);background:var(--bg3)}
+.n-item-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.n-item-date{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:1px}
+.n-item-tags{display:flex;gap:3px;margin-top:2px;flex-wrap:wrap}
+/* Note tabs bar */
+.n-tabs-bar{display:flex;align-items:center;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;height:36px}
+.n-tabs-bar::-webkit-scrollbar{height:2px}
+.n-tab{display:flex;align-items:center;gap:5px;padding:0 10px;height:100%;font-size:12px;color:var(--text-dim);border-right:1px solid var(--border);cursor:pointer;white-space:nowrap;transition:background .12s,color .12s;flex-shrink:0;max-width:180px}
+.n-tab:hover{background:var(--bg3);color:var(--text)}
+.n-tab.active{background:var(--bg);color:var(--text);border-bottom:2px solid var(--accent)}
+.n-tab-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.n-tab-close{font-size:14px;color:var(--text-dim);line-height:1;flex-shrink:0;border-radius:3px;padding:0 2px;margin-left:2px}
+.n-tab-close:hover{color:var(--text);background:var(--bg3)}
+/* Back/fwd nav buttons in note editor bar */
+.n-nav-btn{width:26px;height:26px;border:1px solid var(--border);border-radius:5px;font-size:14px;color:var(--text-dim);display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0}
+.n-nav-btn:hover{border-color:var(--accent);color:var(--accent)}
+.n-nav-btn:disabled{opacity:.3;pointer-events:none}
+.n-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.n-ebar{padding:8px 12px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;gap:7px;flex-shrink:0}
+.n-ebar input[type=text]{flex:1;background:transparent;border:none;font-size:15px;font-weight:500}
+.n-ebar input[type=text]:focus{outline:none}
+.n-tags-inp{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 8px;border-radius:20px;width:150px}
+.n-save-st{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);white-space:nowrap}
+.n-bw{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.n-body{flex:1;overflow:hidden;position:relative}
+.n-links-bar{padding:5px 12px;border-top:1px solid var(--border);background:var(--bg2);display:flex;gap:6px;align-items:center;flex-wrap:wrap;flex-shrink:0;min-height:32px}
+.n-lk-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);white-space:nowrap}
+.n-lk{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:2px 8px;border-radius:3px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;color:var(--accent);transition:all .12s}
+.n-lk:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+
+/* ── [[link]] autocomplete ── */
+.lac{position:fixed;background:var(--bg2);border:1px solid var(--accent);border-radius:6px;box-shadow:var(--shadow);z-index:500;max-height:200px;overflow-y:auto;min-width:200px;display:none}
+.lac-item{padding:7px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border)}
+.lac-item:last-child{border-bottom:none}
+.lac-item:hover,.lac-item.sel{background:var(--bg3);color:var(--accent)}
+.lac-empty{padding:8px 12px;font-size:12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace}
+
+/* ── Misc ── */
+.sr-item{padding:7px 11px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.sr-item:hover{background:var(--bg3)}
+.sr-date{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);margin-bottom:2px}
+.sr-snippet{font-size:12px;color:var(--text-mid)}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--text-dim)}
+.empty-i{font-size:30px}.empty-t{font-family:'IBM Plex Mono',monospace;font-size:12px;text-align:center}
+.toast{position:fixed;bottom:68px;right:18px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:8px 14px;font-size:13px;z-index:300;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;box-shadow:var(--shadow)}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+<div id="hdr">
+  <div id="logo">◈ GTD</div>
+  <div id="qc-wrap">
+    <input type="text" id="q-inp" placeholder="Quick capture (Enter)…">
+    <button id="qc-plus" title="Detailed task">+</button>
+  </div>
+  <div id="hdr-stats">
+    <div class="hstat"><span class="hstat-v" id="s-open">—</span><span class="hstat-l">OPEN</span></div>
+    <div class="hstat"><span class="hstat-v c-r" id="s-late">—</span><span class="hstat-l">LATE</span></div>
+    <div class="hstat"><span class="hstat-v c-g" id="s-done">—</span><span class="hstat-l">DONE</span></div>
+  </div>
+  <button id="theme-btn">◑ Dark</button>
+</div>
+
+<div id="tabs">
+  <button class="tab active" data-tab="today">◎ Day</button>
+  <button class="tab" data-tab="week">▦ Week</button>
+  <button class="tab" data-tab="month">▣ Month</button>
+  <button class="tab" data-tab="tasks">☰ Tasks</button>
+  <button class="tab" data-tab="journal">✏ Journal</button>
+  <button class="tab" data-tab="notes">◫ Notes</button>
+</div>
+
+<div id="content">
+
+<!-- DAY -->
+<div id="today-pane" class="pane active">
+  <div class="day-nav-bar">
+    <button class="nav-arr" id="dp">‹</button>
+    <button class="day-btn" id="dnb-0"></button>
+    <button class="day-btn" id="dnb-1"></button>
+    <button class="day-btn" id="dnb-2"></button>
+    <button class="day-btn" id="dnb-3"></button>
+    <button class="day-btn" id="dnb-4"></button>
+    <button class="nav-arr" id="dn">›</button>
+    <span id="day-disp" style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-mid)"></span>
+  </div>
+  <div class="today-layout">
+    <!-- Left: time-slot schedule -->
+    <div class="today-left">
+      <div class="pane-bar" style="gap:6px">
+        <div class="date-hero-inline">
+          <span class="dh-num" id="h-num"></span>
+          <span class="dh-mon" id="h-mon"></span>
+          <span class="dh-day" id="h-day"></span>
+        </div>
+        <button class="add-ev-btn" id="add-ev">+ Event</button>
+      </div>
+      <!-- All-day / multi-day events banner -->
+      <div class="sched-allday" id="sched-allday" style="display:none">
+        <div class="sched-allday-lbl">All day</div>
+      </div>
+      <!-- Scrollable time grid -->
+      <div class="sched-wrap" id="sched-wrap">
+        <div class="sched-grid" id="sched-grid"></div>
+      </div>
+    </div>
+    <!-- Right: top tasks -->
+    <div class="today-right">
+      <div class="pane-bar">
+        <span class="pane-title">Top Tasks</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);margin-left:auto">☑ done · ⤵ defer · click to edit</span>
+      </div>
+      <div class="tasks-scroll" id="today-tasks"></div>
+    </div>
+  </div>
+</div>
+
+<!-- WEEK -->
+<div id="week-pane" class="pane">
+  <div class="pane-bar">
+    <span class="pane-title">Week</span>
+    <div class="wk-nav">
+      <button class="nav-arr" id="wk-p">‹</button>
+      <span class="wk-lbl" id="wk-lbl"></span>
+      <button class="nav-arr" id="wk-n">›</button>
+      <button class="filter-btn" id="wk-now" style="margin-left:4px">This week</button>
+    </div>
+  </div>
+  <div class="wk-grid" id="wk-grid"></div>
+</div>
+
+<!-- MONTH -->
+<div id="month-pane" class="pane">
+  <div class="pane-bar">
+    <span class="pane-title">Month</span>
+    <div class="mo-nav">
+      <button class="nav-arr" id="mo-p">‹</button>
+      <span class="mo-lbl" id="mo-lbl"></span>
+      <button class="nav-arr" id="mo-n">›</button>
+      <button class="filter-btn" id="mo-now" style="margin-left:4px">This month</button>
+    </div>
+  </div>
+  <div class="mo-grid">
+    <div class="mo-dow-hdr" id="mo-dow"></div>
+    <div class="mo-rows" id="mo-rows"></div>
+  </div>
+</div>
+
+<!-- TASKS -->
+<div id="tasks-pane" class="pane">
+  <div class="tasks-toolbar" id="tasks-tb"></div>
+  <div class="tasks-list" id="all-tasks"></div>
+  <button class="add-fab" id="add-fab">+</button>
+</div>
+
+<!-- JOURNAL -->
+<div id="journal-pane" class="pane">
+  <div class="j-layout">
+    <div class="j-sb">
+      <div class="j-sb-hdr"><input type="text" id="j-search" placeholder="Search journal…"></div>
+      <div id="j-date-list" class="j-date-list"></div>
+      <div id="j-sr-res" class="j-sr-res"></div>
+    </div>
+    <div class="j-main">
+      <div class="j-datebar">
+        <button class="nav-arr" id="j-prev">‹</button>
+        <span class="j-cur-date" id="j-disp"></span>
+        <button class="nav-arr" id="j-next">›</button>
+        <button class="btn btn-g" id="j-today" style="font-size:11px;padding:3px 9px;margin-left:5px">Today</button>
+        <button class="ep-toggle" id="j-prev-btn">Preview</button>
+        <span class="j-save-st" id="j-save-st"></span>
+      </div>
+      <div class="j-ew">
+        <div class="editor-area">
+          <textarea class="editor-ta" id="j-ta"></textarea>
+          <div class="preview-pane" id="j-preview"></div>
+        </div>
+        <div class="tags-panel" id="j-tags-panel"><span class="tp-lbl">TAGS —</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOTES -->
+<div id="notes-pane" class="pane">
+  <div class="n-layout">
+    <div class="n-sb">
+      <div class="n-sb-bar">
+        <input type="text" id="n-search" placeholder="Search…">
+        <button id="n-new" title="New note">+</button>
+      </div>
+      <div class="n-tag-bar" id="n-tag-bar"></div>
+      <div class="n-list" id="n-list"></div>
+    </div>
+    <div class="n-main" id="n-main">
+      <!-- Tabs bar injected here by JS -->
+      <div id="n-tabs-bar" class="n-tabs-bar"></div>
+      <div id="n-editor-area" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div class="empty"><div class="empty-i">◫</div><div class="empty-t">Select or create a note</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Task Modal -->
+<div class="modal-overlay" id="task-modal">
+  <div class="modal">
+    <div class="m-title" id="tm-lbl">New Task</div>
+    <div class="f-row"><label class="f-lbl">Title</label><input type="text" id="tm-title" placeholder="What needs doing?"></div>
+    <div class="f2">
+      <div class="f-row"><label class="f-lbl">Category</label><select id="tm-cat"></select></div>
+      <div class="f-row"><label class="f-lbl">Priority (1–5)</label><input type="number" id="tm-pri" min="1" max="5" value="3"></div>
+    </div>
+    <div class="f2">
+      <div class="f-row"><label class="f-lbl">Deadline</label><input type="date" id="tm-dl"></div>
+      <div class="f-row"><label class="f-lbl">Scheduled for</label><input type="date" id="tm-sched"></div>
+    </div>
+    <div class="f-row"><label class="f-lbl">Effort (minutes)</label><input type="number" id="tm-effort" min="5" step="5" value="30"></div>
+    <div class="f-row"><label class="f-lbl">Tags (comma-separated)</label><input type="text" id="tm-tags" placeholder="email, writing…"></div>
+    <div class="f-row"><label class="f-lbl">Notes / context</label><textarea id="tm-notes"></textarea></div>
+    <div class="m-acts">
+      <button class="btn btn-g" id="tm-cancel">Cancel</button>
+      <button class="btn btn-d" id="tm-delete" style="display:none">Delete</button>
+      <button class="btn btn-p" id="tm-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Event Modal -->
+<div class="modal-overlay" id="ev-modal">
+  <div class="modal">
+    <div class="m-title" id="em-lbl">New Event</div>
+    <div class="f-row"><label class="f-lbl">Title</label><input type="text" id="em-title" placeholder="Event name"></div>
+    <div class="f2">
+      <div class="f-row"><label class="f-lbl">Category</label><select id="em-cat"></select></div>
+      <div class="f-row"><label class="f-lbl">All day</label>
+        <label class="time-allday"><input type="checkbox" id="em-allday"> All day event</label>
+      </div>
+    </div>
+    <!-- Start date + time -->
+    <div class="f-row">
+      <label class="f-lbl">Start</label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="date" id="em-date" style="flex:1;min-width:130px">
+        <div id="em-start-time-wrap" style="display:flex;gap:6px;align-items:center">
+          <input type="text" class="tp-text" id="em-st-txt" placeholder="09:00" maxlength="5">
+          <div class="tp-scroll-wrap" id="tp-s" style="height:108px"><div class="sp-hl"></div></div>
+        </div>
+      </div>
+    </div>
+    <!-- End date + time -->
+    <div class="f-row">
+      <label class="f-lbl">End</label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;flex:1;min-width:130px">
+          <input type="date" id="em-end-date" style="width:100%">
+          <div id="em-nextday-warn" style="display:none;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--orange);margin-top:2px">⚠ ends the next day</div>
+        </div>
+        <div id="em-end-time-wrap" style="display:flex;gap:6px;align-items:center">
+          <input type="text" class="tp-text" id="em-et-txt" placeholder="10:00" maxlength="5">
+          <div class="tp-scroll-wrap" id="tp-e" style="height:108px"><div class="sp-hl"></div></div>
+        </div>
+      </div>
+    </div>
+    <div id="em-time-err" style="color:var(--red);font-size:12px;font-family:'IBM Plex Mono',monospace;display:none;margin-bottom:6px">End must be after start</div>
+    <div class="f-row">
+      <label class="f-lbl">Repeat</label>
+      <select id="em-recur-type">
+        <option value="">No repeat</option>
+        <option value="daily">Daily / every N days</option>
+        <option value="weekly">Weekly</option>
+        <option value="monthly_date">Monthly — same date</option>
+        <option value="monthly_weekday">Monthly — Nth weekday</option>
+        <option value="yearly">Yearly</option>
+      </select>
+      <div class="recur-box" id="recur-box">
+        <div id="rd-daily" style="display:none"><div class="recur-row"><label>Every</label><input type="number" id="rd-dn" value="1" min="1" style="width:54px"><label>day(s)</label></div></div>
+        <div id="rd-weekly" style="display:none">
+          <div class="recur-row"><label>Every</label><input type="number" id="rd-wn" value="1" min="1" style="width:54px"><label>week(s) on:</label></div>
+          <div class="recur-row" id="wd-btns">
+            <button class="wd-btn" data-wd="0">Mo</button><button class="wd-btn" data-wd="1">Tu</button>
+            <button class="wd-btn" data-wd="2">We</button><button class="wd-btn" data-wd="3">Th</button>
+            <button class="wd-btn" data-wd="4">Fr</button><button class="wd-btn" data-wd="5">Sa</button>
+            <button class="wd-btn" data-wd="6">Su</button>
+          </div>
+        </div>
+        <div id="rd-mwd" style="display:none">
+          <div class="recur-row">
+            <label>The</label>
+            <select id="rd-nth"><option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option></select>
+            <select id="rd-wd"><option value="0">Monday</option><option value="1">Tuesday</option><option value="2">Wednesday</option><option value="3">Thursday</option><option value="4">Friday</option><option value="5">Saturday</option><option value="6">Sunday</option></select>
+            <label>of each month</label>
+          </div>
+        </div>
+        <div id="rd-yearly" style="display:none"><div class="recur-row"><label>Every</label><input type="number" id="rd-yn" value="1" min="1" style="width:54px"><label>year(s)</label></div></div>
+      </div>
+    </div>
+    <div class="m-acts">
+      <button class="btn btn-g" id="em-cancel">Cancel</button>
+      <button class="btn btn-d" id="em-delete" style="display:none">Delete</button>
+      <button class="btn btn-p" id="em-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recurring edit dialog -->
+<div class="modal-overlay" id="red-overlay">
+  <div class="red-dialog">
+    <div class="red-t">Edit recurring event</div>
+    <div class="red-s">This event repeats. What would you like to change?</div>
+    <div class="red-opts">
+      <button class="red-opt" id="red-one">Edit this occurrence only</button>
+      <button class="red-opt" id="red-future">Edit this and all future occurrences</button>
+      <button class="red-opt" id="red-all">Edit all occurrences</button>
+    </div>
+    <div class="m-acts"><button class="btn btn-g" id="red-cancel">Cancel</button></div>
+  </div>
+</div>
+
+<!-- Category modal -->
+<div class="modal-overlay" id="cat-modal">
+  <div class="modal" style="width:420px">
+    <div class="m-title">Manage Categories</div>
+    <div id="cat-list" style="display:flex;flex-direction:column;gap:2px;margin-bottom:14px"></div>
+    <div style="display:flex;gap:7px;margin-bottom:6px">
+      <input type="text" id="cat-new" placeholder="New category name…" style="flex:1">
+      <button class="btn btn-p" id="cat-add-btn">Add</button>
+    </div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);margin-bottom:12px">
+      Click the color swatch to change color · Click the name to rename · ★ = default category
+    </div>
+    <div class="m-acts"><button class="btn btn-g" id="cat-done">Done</button></div>
+  </div>
+</div>
+
+<!-- Delete-category confirmation modal -->
+<div class="modal-overlay" id="delcat-modal">
+  <div class="modal" style="width:380px">
+    <div class="m-title">Delete Category</div>
+    <div id="delcat-msg" style="font-size:13px;margin-bottom:14px;line-height:1.5"></div>
+    <div class="m-acts">
+      <button class="btn btn-g" id="delcat-cancel">Cancel</button>
+      <button class="btn btn-g" id="delcat-move">Move to Uncategorized</button>
+      <button class="btn btn-d" id="delcat-purge">Delete all tasks &amp; events</button>
+    </div>
+  </div>
+</div>
+
+<!-- Color palette popup (shared singleton) -->
+<div class="color-palette" id="color-palette"></div>
+
+<div class="lac" id="lac"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// GTD App — frontend v6 (vanilla JS, no build step)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const SDAYS  = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const SDMON  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+/** Escape a string for safe insertion into innerHTML. Always use on user data. */
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+const TAG_RE = /#"([^"]+)"|#([A-Za-z][A-Za-z0-9_\-\.]*)/g;
+function extractTags(text) {
+  const found=[]; let m; TAG_RE.lastIndex=0;
+  while((m=TAG_RE.exec(text||''))!==null){const t=(m[1]||m[2]).trim();if(t&&!found.includes(t))found.push(t);}
+  return found;
+}
+
+function isoDate(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dy=String(d.getDate()).padStart(2,'0');return`${y}-${m}-${dy}`}
+function localToday(){const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())}
+function parseISO(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function fmtTime(dt){if(!dt)return'';return(dt+'').slice(11,16)||''}
+function effortStr(m){if(!m)return'';return m<60?m+'m':Math.floor(m/60)+'h'+(m%60?m%60+'m':'')}
+function dlCls(iso){if(!iso)return'';const d=Math.ceil((parseISO(iso)-localToday())/86400000);return d<0||d<=2?'urg':d<=7?'soon':'ok'}
+function dlLabel(iso){if(!iso)return'';const d=Math.ceil((parseISO(iso)-localToday())/86400000);return d<0?Math.abs(d)+'d late':d===0?'today':d===1?'tomorrow':iso}
+
+let toastTm;
+function toast(msg,dur=2500){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTm);toastTm=setTimeout(()=>t.classList.remove('show'),dur)}
+
+async function api(path,opts={}){
+  const res=await fetch(path,{headers:{'Content-Type':'application/json'},...opts,body:opts.body?JSON.stringify(opts.body):undefined});
+  return res.json();
+}
+
+// ── Themes ────────────────────────────────────────────────────────────────
+const THEMES=['dark','dark-hc','light','light-hc'];
+const TH_LBL={'dark':'◑ Dark','dark-hc':'● Dark HC','light':'○ Light','light-hc':'◎ Light HC'};
+let thIdx=THEMES.indexOf(localStorage.getItem('gtd-theme')||'dark');if(thIdx<0)thIdx=0;
+
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',THEMES[thIdx]);
+  $('theme-btn').textContent=TH_LBL[THEMES[thIdx]];
+  localStorage.setItem('gtd-theme',THEMES[thIdx]);
+  // Re-apply category CSS vars for the new theme
+  applyCatColors();
+}
+$('theme-btn').addEventListener('click',()=>{thIdx=(thIdx+1)%THEMES.length;applyTheme();});
+
+// ── Category colors ────────────────────────────────────────────────────────
+/**
+ * Color palette per theme.  Each entry: { label, dark, 'dark-hc', light, 'light-hc' }
+ * Chosen to have strong contrast against their respective backgrounds.
+ */
+const CAT_PALETTE = [
+  { id:'blue',    dark:'#4fa8ff', 'dark-hc':'#60b8ff', light:'#1060d8', 'light-hc':'#0040cc' },
+  { id:'violet',  dark:'#9966ff', 'dark-hc':'#bb88ff', light:'#5020c0', 'light-hc':'#3800aa' },
+  { id:'teal',    dark:'#20d0c0', 'dark-hc':'#00ffee', light:'#007a6e', 'light-hc':'#005048' },
+  { id:'green',   dark:'#30d87a', 'dark-hc':'#44ff88', light:'#0a8840', 'light-hc':'#005520' },
+  { id:'lime',    dark:'#a8d830', 'dark-hc':'#ccff44', light:'#567000', 'light-hc':'#364800' },
+  { id:'yellow',  dark:'#f5c040', 'dark-hc':'#ffee44', light:'#906000', 'light-hc':'#554400' },
+  { id:'orange',  dark:'#ff8c42', 'dark-hc':'#ffb044', light:'#b85010', 'light-hc':'#662200' },
+  { id:'red',     dark:'#ff3d5a', 'dark-hc':'#ff4466', light:'#c01030', 'light-hc':'#990011' },
+  { id:'pink',    dark:'#ff66aa', 'dark-hc':'#ff88cc', light:'#aa0060', 'light-hc':'#880044' },
+  { id:'slate',   dark:'#8aa0bc', 'dark-hc':'#b0ccee', light:'#2a4070', 'light-hc':'#101828' },
+];
+
+/** Return the hex color for a palette entry in the current theme. */
+function paletteColor(entry){return entry[THEMES[thIdx]]||entry.dark}
+
+/**
+ * Apply per-category CSS custom properties so that event/task coloring
+ * is driven by CSS: --cat-{slug} on :root.
+ * Also sets the border-left color on .task-card and .ev-chip via inline style
+ * (since CSS can't do dynamic class→variable mapping without JS).
+ */
+function applyCatColors(){
+  const root=document.documentElement;
+  Object.entries(catColors).forEach(([slug,colorId])=>{
+    const entry=CAT_PALETTE.find(p=>p.id===colorId)||CAT_PALETTE[0];
+    root.style.setProperty(`--cat-${cssSlug(slug)}`,paletteColor(entry));
+  });
+}
+
+/** Convert a category name to a CSS-safe identifier. */
+function cssSlug(name){return name.replace(/[^a-z0-9]/gi,'-').toLowerCase()}
+
+/** Look up the resolved color for a category in the current theme. */
+function catColor(catName){
+  const slug=cssSlug(catName);
+  const colorId=catColors[slug]||catColors[catName]||'blue';
+  const entry=CAT_PALETTE.find(p=>p.id===colorId)||CAT_PALETTE[0];
+  return paletteColor(entry);
+}
+
+// ── Config ────────────────────────────────────────────────────────────────
+/**
+ * categories: array of { name, color (palette id) }
+ * catColors: map slug→colorId (derived for fast lookup)
+ * defaultCategory: name string
+ */
+let categories = [];          // [{name,color}]
+let catColors  = {};          // slug → paletteId
+let defaultCategory = 'uncategorized';
+const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+
+async function loadConfig(){
+  const cfg=await api('/api/config');
+  // Migrate old string-array format to object array
+  const raw=cfg.categories||[];
+  categories=raw.map(c=>typeof c==='string'?{name:c,color:catColorDefault(c)}:c);
+  // Ensure 'uncategorized' always exists
+  if(!categories.find(c=>c.name==='uncategorized'))
+    categories.unshift({name:'uncategorized',color:'slate'});
+  defaultCategory=cfg.defaultCategory||categories[0]?.name||'uncategorized';
+  rebuildCatColors();
+  applyCatColors();
+  populateCats();
+  buildTaskToolbar();
+}
+
+/** Pick a sensible default palette color for a category by name. */
+function catColorDefault(name){
+  const map={work:'blue',personal:'violet',health:'green',home:'orange',learning:'yellow',finance:'teal',uncategorized:'slate'};
+  return map[name]||CAT_PALETTE[Math.abs(hashStr(name))%CAT_PALETTE.length].id;
+}
+
+function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=(Math.imul(31,h)+s.charCodeAt(i))|0;return h}
+
+function rebuildCatColors(){
+  catColors={};
+  categories.forEach(c=>catColors[cssSlug(c.name)]=c.color||'blue');
+}
+
+async function saveCategories(){
+  rebuildCatColors();
+  applyCatColors();
+  await api('/api/config',{method:'PUT',body:{categories,defaultCategory}});
+}
+
+function populateCats(){
+  ['tm-cat','em-cat'].forEach(id=>{
+    const s=$(id);if(!s)return;const cur=s.value;
+    s.innerHTML=categories.map(c=>`<option value="${esc(c.name)}">${esc(cap(c.name))}</option>`).join('');
+    if(cur&&categories.find(c=>c.name===cur))s.value=cur;
+    else s.value=defaultCategory||categories[0]?.name||'';
+  });
+}
+
+// ── Category modal ─────────────────────────────────────────────────────────
+$('cat-done').addEventListener('click',()=>$('cat-modal').classList.remove('open'));
+$('cat-modal').addEventListener('click',e=>{if(e.target===$('cat-modal'))$('cat-modal').classList.remove('open');});
+
+function openCatModal(){renderCatList();$('cat-modal').classList.add('open')}
+
+function renderCatList(){
+  const list=$('cat-list');list.innerHTML='';
+  categories.forEach((c,idx)=>{
+    const row=document.createElement('div');row.className='cat-row';
+    const colorEntry=CAT_PALETTE.find(p=>p.id===c.color)||CAT_PALETTE[0];
+    const swatch=document.createElement('div');
+    swatch.className='cat-color-swatch';
+    swatch.style.background=paletteColor(colorEntry);
+    swatch.title='Change color';
+    swatch.addEventListener('click',e=>openColorPalette(e,idx));
+
+    const nameInp=document.createElement('input');
+    nameInp.type='text';nameInp.className='cat-name-inp';
+    nameInp.value=cap(c.name);
+    // Prevent renaming 'uncategorized'
+    if(c.name==='uncategorized')nameInp.disabled=true;
+    nameInp.addEventListener('change',async()=>{
+      const newName=nameInp.value.trim().toLowerCase().replace(/\s+/g,'-');
+      if(!newName||newName===c.name)return;
+      // Rename category in backend tasks/events too
+      await api('/api/config/rename-category',{method:'POST',body:{old:c.name,new:newName}});
+      categories[idx].name=newName;
+      if(defaultCategory===c.name)defaultCategory=newName;
+      await saveCategories();
+      renderCatList();populateCats();buildTaskToolbar();
+    });
+
+    const defBtn=document.createElement('button');
+    defBtn.className='cat-default-btn'+(c.name===defaultCategory?' is-default':'');
+    defBtn.textContent=c.name===defaultCategory?'★ default':'☆ set default';
+    defBtn.title='Make this the default category for new tasks/events';
+    defBtn.addEventListener('click',async()=>{
+      defaultCategory=c.name;
+      await saveCategories();
+      renderCatList();populateCats();
+    });
+
+    const delBtn=document.createElement('button');
+    delBtn.className='btn btn-d';delBtn.style.cssText='font-size:11px;padding:2px 8px;flex-shrink:0';
+    delBtn.textContent='Remove';
+    if(c.name==='uncategorized')delBtn.disabled=true;
+    delBtn.addEventListener('click',()=>confirmDeleteCategory(c.name));
+
+    row.appendChild(swatch);row.appendChild(nameInp);row.appendChild(defBtn);row.appendChild(delBtn);
+    list.appendChild(row);
+  });
+}
+
+// ── Color palette popup ────────────────────────────────────────────────────
+let paletteTargetIdx=-1;
+function openColorPalette(e,catIdx){
+  paletteTargetIdx=catIdx;
+  const pal=$('color-palette');
+  pal.innerHTML='';
+  CAT_PALETTE.forEach(entry=>{
+    const sw=document.createElement('div');sw.className='cp-swatch';
+    sw.style.background=paletteColor(entry);
+    if(categories[catIdx]?.color===entry.id)sw.classList.add('active');
+    sw.title=entry.id;
+    sw.addEventListener('click',async()=>{
+      categories[catIdx].color=entry.id;
+      await saveCategories();
+      pal.classList.remove('open');
+      renderCatList();
+      // Refresh views so colors update
+      if(activeTab==='today')loadTodayView();
+      if(activeTab==='week')loadWeekView();
+      if(activeTab==='month')loadMonthView();
+    });
+    pal.appendChild(sw);
+  });
+  // Position near the swatch
+  const r=e.target.getBoundingClientRect();
+  pal.style.left=r.left+'px';pal.style.top=(r.bottom+4)+'px';
+  pal.classList.add('open');
+  e.stopPropagation();
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#color-palette')&&!e.target.classList.contains('cat-color-swatch'))
+    $('color-palette').classList.remove('open');
+});
+
+// ── Delete category flow ───────────────────────────────────────────────────
+let pendingDelCat='';
+
+function confirmDeleteCategory(name){
+  pendingDelCat=name;
+  $('delcat-msg').textContent=`Delete category "${cap(name)}"? Tasks and events in this category can be moved to Uncategorized, or deleted along with the category.`;
+  $('delcat-modal').classList.add('open');
+}
+$('delcat-cancel').addEventListener('click',()=>$('delcat-modal').classList.remove('open'));
+$('delcat-modal').addEventListener('click',e=>{if(e.target===$('delcat-modal'))$('delcat-modal').classList.remove('open');});
+
+$('delcat-move').addEventListener('click',async()=>{
+  await api('/api/config/delete-category',{method:'POST',body:{name:pendingDelCat,action:'move'}});
+  categories=categories.filter(c=>c.name!==pendingDelCat);
+  if(defaultCategory===pendingDelCat)defaultCategory='uncategorized';
+  await saveCategories();
+  $('delcat-modal').classList.remove('open');
+  renderCatList();populateCats();buildTaskToolbar();
+  toast('Category removed — tasks moved to Uncategorized');
+});
+
+$('delcat-purge').addEventListener('click',async()=>{
+  if(!confirm(`Really delete ALL tasks and events in "${cap(pendingDelCat)}"? This cannot be undone.`))return;
+  await api('/api/config/delete-category',{method:'POST',body:{name:pendingDelCat,action:'purge'}});
+  categories=categories.filter(c=>c.name!==pendingDelCat);
+  if(defaultCategory===pendingDelCat)defaultCategory='uncategorized';
+  await saveCategories();
+  $('delcat-modal').classList.remove('open');
+  renderCatList();populateCats();buildTaskToolbar();
+  loadStats();
+  toast('Category and all its tasks/events deleted');
+});
+
+$('cat-add-btn').addEventListener('click',async()=>{
+  const v=$('cat-new').value.trim().toLowerCase().replace(/\s+/g,'-');
+  if(!v||categories.find(c=>c.name===v))return;
+  categories.push({name:v,color:catColorDefault(v)});
+  await saveCategories();
+  $('cat-new').value='';
+  renderCatList();populateCats();buildTaskToolbar();
+});
+
+// ── Stats ─────────────────────────────────────────────────────────────────
+async function loadStats(){const s=await api('/api/stats');$('s-open').textContent=s.open;$('s-late').textContent=s.overdue;$('s-done').textContent=s.done_today}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+let activeTab='today';
+document.querySelectorAll('.tab').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');const tab=btn.dataset.tab;
+  $(`${tab}-pane`).classList.add('active');activeTab=tab;
+  if(tab==='today')loadTodayView();
+  if(tab==='week')loadWeekView();
+  if(tab==='month')loadMonthView();
+  if(tab==='tasks')loadAllTasks();
+  if(tab==='journal'){loadJDates();loadJournal(jDate)}
+  if(tab==='notes')loadNotes();
+}));
+
+// ── Helpers: set CSS color on elements by category ─────────────────────────
+/**
+ * Set --cat-color on an element so CSS rules that reference var(--cat-color)
+ * pick up the correct per-category color automatically.
+ */
+function setCatColor(el,catName){
+  el.style.setProperty('--cat-color',catColor(catName));
+}
+
+// ══════════════════════════════════════════════════════════
+// DAY VIEW — time-slot schedule
+// ══════════════════════════════════════════════════════════
+let viewDate=isoDate(new Date());
+
+/** Height in pixels of one hour slot in the schedule grid. */
+const HOUR_H=112;
+
+function refreshDayBtns(){
+  const t=localToday();
+  for(let i=0;i<5;i++){
+    const d=new Date(t);d.setDate(d.getDate()+i);const iso=isoDate(d),btn=$(`dnb-${i}`);
+    btn.dataset.iso=iso;
+    btn.textContent=i===0?'Today':i===1?'Tomorrow':SDAYS[d.getDay()]+' '+d.getDate();
+    btn.classList.toggle('active',iso===viewDate);
+  }
+}
+for(let i=0;i<5;i++)$(`dnb-${i}`).addEventListener('click',()=>setViewDate($(`dnb-${i}`).dataset.iso));
+$('dp').addEventListener('click',()=>{const d=parseISO(viewDate);d.setDate(d.getDate()-1);setViewDate(isoDate(d));});
+$('dn').addEventListener('click',()=>{const d=parseISO(viewDate);d.setDate(d.getDate()+1);setViewDate(isoDate(d));});
+function setViewDate(iso){viewDate=iso;refreshDayBtns();loadTodayView()}
+
+async function loadTodayView(){
+  const d=parseISO(viewDate);
+  $('h-day').textContent=DAYS[d.getDay()];
+  $('h-num').textContent=d.getDate();
+  $('h-mon').textContent=MONTHS[d.getMonth()]+' '+d.getFullYear();
+  $('day-disp').textContent=viewDate===isoDate(new Date())?'':d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  const[evs,tasks]=await Promise.all([api(`/api/events/day/${viewDate}`),api(`/api/tasks/day/${viewDate}`)]);
+  renderSchedGrid(evs,viewDate);
+  const tl=$('today-tasks');tl.innerHTML='';
+  if(!tasks.length)tl.innerHTML='<div class="empty"><div class="empty-i">✓</div><div class="empty-t">Nothing urgent today</div></div>';
+  else tasks.forEach(t=>tl.appendChild(makeTaskCard(t)));
+  loadStats();
+}
+
+/**
+ * Build the time-slot schedule grid for the Day view.
+ *
+ * All-day events + middle days of multi-day events → top banner.
+ * Timed events (including start/end portions of multi-day) → positioned blocks.
+ *   - A multi-day event on its START day runs from start time to 23:59.
+ *   - A multi-day event on its END day runs from 00:00 to end time.
+ *   - All other days of a multi-day event go in the all-day banner.
+ */
+function renderSchedGrid(evs,date){
+  const isToday=date===isoDate(new Date());
+
+  // Separate events into banner (all-day / middle) and timed (start/end/single)
+  const bannerEvs=evs.filter(e=>e.all_day||e.day_role==='middle');
+  const timedEvs =evs.filter(e=>!e.all_day&&e.day_role!=='middle'&&e.start_dt?.length>10);
+
+  // ── All-day + middle-day banner ─────────────────────────────────────────
+  const banner=$('sched-allday');
+  [...banner.querySelectorAll('.sched-ev-allday-chip')].forEach(el=>el.remove());
+  if(bannerEvs.length){
+    banner.style.display='';
+    bannerEvs.forEach(ev=>{
+      const chip=document.createElement('div');chip.className='sched-ev-allday-chip';
+      const color=catColor(ev.category||'uncategorized');
+      chip.style.borderLeftColor=color;
+      chip.style.background=`color-mix(in srgb,${color} 15%,var(--bg3))`;
+      // Label multi-day context clearly
+      let label=ev.title;
+      if(ev.day_role==='middle')label=`↔ ${ev.title}`;
+      chip.textContent=label;
+      chip.addEventListener('click',()=>openEvEdit(ev,date));
+      banner.appendChild(chip);
+    });
+  }else{banner.style.display='none'}
+
+  // ── Hour grid ───────────────────────────────────────────────────────────
+  const grid=$('sched-grid');grid.innerHTML='';
+  grid.style.height=(24*HOUR_H)+'px';
+  for(let h=0;h<24;h++){
+    const row=document.createElement('div');
+    row.className='sched-hour';
+    row.style.cssText=`position:absolute;top:${h*HOUR_H}px;left:0;right:0;height:${HOUR_H}px`;
+    const lbl=document.createElement('div');lbl.className='sched-hour-lbl';
+    // Show '00' for midnight so the row is labelled
+    lbl.textContent=String(h).padStart(2,'0')+':00';
+    row.appendChild(lbl);
+    grid.appendChild(row);
+  }
+
+  // ── Timed event blocks ──────────────────────────────────────────────────
+  // For multi-day start/end days, clamp visible time range:
+  //   start day: start_time → 24:00   (rendered as 23:59 end)
+  //   end day:   00:00      → end_time
+  //   single day: start_time → end_time
+
+  const sorted=[...timedEvs].sort((a,b)=>a.start_dt.localeCompare(b.start_dt));
+  sorted.forEach(ev=>{
+    let sh,sm,eh,em;
+    if(ev.day_role==='start'){
+      [sh,sm]=ev.start_dt.slice(11,16).split(':').map(Number);
+      eh=23;em=59;
+    }else if(ev.day_role==='end'){
+      sh=0;sm=0;
+      [eh,em]=ev.end_dt.slice(11,16).split(':').map(Number);
+    }else{
+      // single day
+      [sh,sm]=ev.start_dt.slice(11,16).split(':').map(Number);
+      if(ev.end_dt?.length>10)[eh,em]=ev.end_dt.slice(11,16).split(':').map(Number);
+      else{eh=sh+1;em=sm}
+    }
+    ev._sm=sh*60+sm;
+    // Minimum visible height = 30 min
+    ev._em=Math.max(eh*60+em, ev._sm+30);
+  });
+
+  // Lay out columns to avoid overlaps
+  const cols=[];
+  sorted.forEach(ev=>{
+    let placed=false;
+    for(let ci=0;ci<cols.length;ci++){
+      if(cols[ci][cols[ci].length-1]._em<=ev._sm){cols[ci].push(ev);placed=true;break}
+    }
+    if(!placed)cols.push([ev]);
+  });
+
+  cols.forEach((col,ci)=>{
+    col.forEach(ev=>{
+      const top   =ev._sm/60*HOUR_H;
+      const height=Math.max((ev._em-ev._sm)/60*HOUR_H,28);
+      const block =document.createElement('div');block.className='sched-ev-block';
+      // Left/right in percent of area to the right of the hour label (44px)
+      block.style.cssText=`top:${top}px;height:${height}px;`+
+        `left:calc(44px + ${(ci/cols.length)*100}%);`+
+        `right:${((cols.length-ci-1)/cols.length)*100}%;`;
+      const color=catColor(ev.category||'uncategorized');
+      block.style.borderLeftColor=color;
+      block.style.background=`color-mix(in srgb,${color} 20%,var(--bg2))`;
+
+      // Time label changes based on role
+      let timeLabel=ev.start_dt.slice(11,16);
+      let roleSuffix='';
+      if(ev.day_role==='start'){roleSuffix=' →'}
+      else if(ev.day_role==='end'){timeLabel='00:00';roleSuffix=` ends ${ev.end_dt.slice(11,16)}`}
+
+      block.innerHTML=`<div class="ev-t">${esc(timeLabel+roleSuffix)}</div><div style="font-weight:500">${esc(ev.title)}</div>`;
+      block.addEventListener('click',()=>openEvEdit(ev,date));
+      grid.appendChild(block);
+    });
+  });
+
+  // ── Current-time indicator ──────────────────────────────────────────────
+  if(isToday){
+    const now=new Date();const min=now.getHours()*60+now.getMinutes();
+    const line=document.createElement('div');line.className='sched-now-line';
+    line.style.top=(min/60*HOUR_H)+'px';
+    grid.appendChild(line);
+    const wrap=$('sched-wrap');
+    if(wrap)wrap.scrollTop=Math.max(0,min/60*HOUR_H-wrap.offsetHeight/2);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// WEEK
+// ══════════════════════════════════════════════════════════
+let wkOff=0;
+function wkMon(off){const d=localToday(),dow=d.getDay(),dm=dow===0?6:dow-1;d.setDate(d.getDate()-dm+off*7);return d}
+function updWkLbl(){const m=wkMon(wkOff),s=new Date(m);s.setDate(s.getDate()+6);$('wk-lbl').textContent=`${m.toLocaleDateString('en-GB',{day:'numeric',month:'short'})} – ${s.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`}
+$('wk-p').addEventListener('click',()=>{wkOff--;loadWeekView()});
+$('wk-n').addEventListener('click',()=>{wkOff++;loadWeekView()});
+$('wk-now').addEventListener('click',()=>{wkOff=0;loadWeekView()});
+
+async function loadWeekView(){
+  updWkLbl();
+  const mon=wkMon(wkOff),sun=new Date(mon);sun.setDate(sun.getDate()+6);
+  const fi=isoDate(mon),ti=isoDate(sun);
+  const[evs,tasks]=await Promise.all([api(`/api/events?from=${fi}&to=${ti}`),api('/api/tasks?status=open')]);
+  const grid=$('wk-grid');grid.innerHTML='';
+  const tIso=isoDate(new Date());
+  // Multi-day strip: all all-day events AND timed events that span >1 day
+  const multiDayEvs=evs.filter(e=>e.end_dt&&e.start_dt.slice(0,10)!==e.end_dt.slice(0,10));
+
+  for(let i=0;i<7;i++){
+    const d=new Date(mon);d.setDate(d.getDate()+i);const iso=isoDate(d);
+    const col=document.createElement('div');col.className='wk-col';
+    const hdr=document.createElement('div');
+    hdr.className='wk-hdr'+(iso===tIso?' today':'');
+    hdr.innerHTML=`<div class="wk-dname">${SDMON[i]}</div><div class="wk-num">${d.getDate()}</div>`;
+    hdr.addEventListener('click',()=>{setViewDate(iso);document.querySelector('[data-tab="today"]').click()});
+
+    const allday=document.createElement('div');allday.className='wk-allday';
+    multiDayEvs.forEach(ev=>{
+      const eSt=ev.start_dt.slice(0,10),eEn=ev.end_dt.slice(0,10);
+      if(iso>=eSt&&iso<=eEn){
+        const el=document.createElement('div');
+        const isFirst=iso===eSt,isLast=iso===eEn;
+        let cls='wk-allday-ev';
+        if(!isFirst&&!isLast)cls+=' cont-lr';else if(!isFirst)cls+=' cont-l';else if(!isLast)cls+=' cont-r';
+        el.className=cls;
+        const color=catColor(ev.category||'uncategorized');
+        el.style.setProperty('--cat-color',color);
+        // Show title on first day, start/end times on timed multi-day events
+        if(isFirst){
+          const startTime=ev.start_dt.length>10?ev.start_dt.slice(11,16):'';
+          el.textContent=startTime?`${ev.title} ${startTime}→`:ev.title;
+        }else if(isLast&&ev.end_dt?.length>10){
+          el.textContent=`→${ev.end_dt.slice(11,16)}`;
+        }else{
+          el.textContent='';
+        }
+        el.addEventListener('click',()=>openEvEdit(ev,iso));
+        allday.appendChild(el);
+      }
+    });
+
+    const body=document.createElement('div');body.className='wk-body';
+    // Only show timed single-day events in the body (multi-day go in strip above)
+    evs.filter(e=>e.start_dt.startsWith(iso)&&!e.all_day&&!(e.end_dt&&e.end_dt.slice(0,10)!==iso)).forEach(ev=>{
+      const el=document.createElement('div');el.className='wk-ev';
+      const color=catColor(ev.category||'uncategorized');
+      el.style.setProperty('--cat-color',color);
+      const t=fmtTime(ev.start_dt);
+      el.innerHTML=(t?`<div class="wk-ev-t">${esc(t)}${ev.is_recurring?' ↻':''}</div>`:'')+esc(ev.title);
+      el.addEventListener('click',()=>openEvEdit(ev,iso));body.appendChild(el);
+    });
+
+    const dayTasks=tasks.filter(t=>t.scheduled===iso||t.deadline===iso);
+    const topToday=iso===tIso?tasks.filter(t=>!dayTasks.some(p=>p.id===t.id)).slice(0,3):[];
+    if(body.children.length&&(dayTasks.length+topToday.length)){const div=document.createElement('div');div.style.cssText='height:1px;background:var(--border);margin:2px 0';body.appendChild(div)}
+    [...dayTasks,...topToday].slice(0,4).forEach(t=>{
+      const el=document.createElement('div');el.className='wk-task';
+      const dot=document.createElement('div');dot.className='wk-dot';
+      dot.style.background=catColor(t.category||'uncategorized');
+      const span=document.createElement('span');span.textContent=t.title;
+      el.appendChild(dot);el.appendChild(span);
+      el.addEventListener('click',()=>openTaskModal(t));body.appendChild(el);
+    });
+    col.appendChild(hdr);col.appendChild(allday);col.appendChild(body);grid.appendChild(col);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// MONTH
+// ══════════════════════════════════════════════════════════
+let moY=new Date().getFullYear(),moM=new Date().getMonth();
+function updMoLbl(){$('mo-lbl').textContent=MONTHS[moM]+' '+moY}
+$('mo-p').addEventListener('click',()=>{moM--;if(moM<0){moM=11;moY--}loadMonthView()});
+$('mo-n').addEventListener('click',()=>{moM++;if(moM>11){moM=0;moY++}loadMonthView()});
+$('mo-now').addEventListener('click',()=>{moY=new Date().getFullYear();moM=new Date().getMonth();loadMonthView()});
+
+async function loadMonthView(){
+  updMoLbl();
+  const first=new Date(moY,moM,1),last=new Date(moY,moM+1,0);
+  const sDow=first.getDay()===0?6:first.getDay()-1;
+  const gStart=new Date(first);gStart.setDate(gStart.getDate()-sDow);
+  const eDow=last.getDay()===0?6:last.getDay()-1;
+  const gEnd=new Date(last);gEnd.setDate(gEnd.getDate()+(6-eDow));
+  const fi=isoDate(gStart),ti=isoDate(gEnd);
+  const[evs,tasks]=await Promise.all([api(`/api/events?from=${fi}&to=${ti}`),api('/api/tasks?status=open')]);
+  const tIso=isoDate(new Date());
+  const dow=$('mo-dow');dow.innerHTML='';
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(n=>{const d=document.createElement('div');d.className='mo-dow';d.textContent=n;dow.appendChild(d)});
+  const rows=$('mo-rows');rows.innerHTML='';let cur=new Date(gStart);
+  while(cur<=gEnd){
+    const row=document.createElement('div');row.className='mo-wk-row';
+    for(let i=0;i<7;i++){
+      const iso=isoDate(cur);
+      const cell=document.createElement('div');
+      cell.className='mo-day'+(iso===tIso?' today':'')+(cur.getMonth()!==moM?' other-mo':'');
+      const numDiv=document.createElement('div');numDiv.className='mo-day-num';numDiv.textContent=cur.getDate();cell.appendChild(numDiv);
+      evs.filter(e=>{const st=e.start_dt.slice(0,10);const en=e.end_dt?e.end_dt.slice(0,10):st;return iso>=st&&iso<=en}).slice(0,3).forEach(ev=>{
+        const el=document.createElement('div');
+        const isFirst=iso===ev.start_dt.slice(0,10);
+        const isMulti=ev.all_day&&ev.end_dt&&ev.start_dt.slice(0,10)!==ev.end_dt.slice(0,10);
+        el.className='mo-item ev'+(isMulti&&!isFirst?' multiday':'');
+        const color=catColor(ev.category||'uncategorized');
+        el.style.setProperty('--cat-color',color);
+        el.style.borderLeftColor=color;
+        el.style.background=`color-mix(in srgb,${color} 20%,var(--bg))`;
+        el.textContent=(fmtTime(ev.start_dt)?fmtTime(ev.start_dt)+' ':'')+ev.title;
+        el.addEventListener('click',e=>{e.stopPropagation();openEvEdit(ev,iso)});cell.appendChild(el);
+      });
+      tasks.filter(t=>t.deadline===iso||t.scheduled===iso).slice(0,2).forEach(t=>{
+        const el=document.createElement('div');el.className='mo-item task'+(t.deadline===iso&&iso<tIso?' overdue':'');
+        el.textContent=t.title;
+        el.addEventListener('click',e=>{e.stopPropagation();openTaskModal(t)});cell.appendChild(el);
+      });
+      cell.addEventListener('click',()=>{setViewDate(iso);document.querySelector('[data-tab="today"]').click()});
+      row.appendChild(cell);cur.setDate(cur.getDate()+1);
+    }
+    rows.appendChild(row);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// TASK CARD
+// ══════════════════════════════════════════════════════════
+function makeTaskCard(t){
+  const card=document.createElement('div');
+  const tIso=isoDate(new Date());
+  const isOver=t.deadline&&t.deadline<tIso&&t.status==='open';
+  card.className=`task-card${isOver?' overdue':''}`;
+  const color=catColor(t.category||'uncategorized');
+  card.style.borderLeftColor=color;
+  const dl=t.deadline?`<span class="task-dl ${dlCls(t.deadline)}">${esc(dlLabel(t.deadline))}</span>`:'';
+  const ef=t.effort?`<span class="task-ef">${esc(effortStr(t.effort))}</span>`:'';
+  const tags=(t.tags||[]).slice(0,2).map(tg=>`<span class="tag-p">${esc(tg)}</span>`).join('');
+  const prev=t.notes?`<div class="task-prev">${esc(t.notes.slice(0,90))}</div>`:'';
+  card.innerHTML=`
+    <div class="task-cb${t.status==='done'?' done':''}" title="${t.status==='done'?'Reopen':'Mark done'}"></div>
+    <div class="task-body"><div class="task-title">${esc(t.title)}</div>${prev}<div class="task-meta">${dl}${ef}${tags}</div></div>
+    <div class="task-acts"><span class="task-urg" title="Urgency">${esc(String(t.urgency))}</span><button class="task-ab" title="Defer to tomorrow" data-defer>⤵</button></div>`;
+  card.querySelector('.task-cb').addEventListener('click',e=>{e.stopPropagation();toggleDone(t,card)});
+  card.querySelector('[data-defer]').addEventListener('click',e=>{e.stopPropagation();deferTask(t.id,card)});
+  card.addEventListener('click',()=>openTaskModal(t));
+  return card;
+}
+async function toggleDone(t,card){
+  const ns=t.status==='done'?'open':'done';
+  await api(`/api/tasks/${t.id}`,{method:'PATCH',body:{status:ns}});
+  toast(ns==='done'?'☑ Done':'↩ Reopened');
+  if(activeTab==='today')loadTodayView();else loadAllTasks();loadStats();
+}
+async function deferTask(id,card){
+  const tom=isoDate(new Date(localToday().getTime()+86400000));
+  await api(`/api/tasks/${id}`,{method:'PATCH',body:{deferred_until:tom}});
+  card.style.cssText+='opacity:.2;transform:translateX(12px);transition:all .3s';
+  setTimeout(()=>card.remove(),300);toast('⤵ Deferred to tomorrow');loadStats();
+}
+
+// ══════════════════════════════════════════════════════════
+// ALL TASKS
+// ══════════════════════════════════════════════════════════
+let TF={cat:'',status:'open',efMin:'',efMax:'',sort:'urgency',q:''};
+function buildTaskToolbar(){
+  const tb=$('tasks-tb');
+  tb.innerHTML=`
+    <button class="filter-btn${!TF.cat?' active':''}" data-fc="">All</button>
+    ${categories.map(c=>`<button class="filter-btn${TF.cat===c.name?' active':''}" data-fc="${esc(c.name)}" style="border-left:3px solid ${catColor(c.name)}">${esc(cap(c.name))}</button>`).join('')}
+    <button class="filter-btn" id="tb-cats" style="border-style:dashed">+ Category</button>
+    <div class="filter-sep"></div>
+    <button class="filter-btn${TF.status==='open'?' active':''}" data-fs="open">Open</button>
+    <button class="filter-btn${TF.status==='done'?' active':''}" data-fs="done">Done</button>
+    <div class="filter-sep"></div>
+    <select id="ef-sel" style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 8px;border-radius:20px">
+      <option value="">Any effort</option><option value="0,20">~15 min</option>
+      <option value="21,45">~30 min</option><option value="46,75">~1 h</option><option value="76,9999">Over 1 h</option>
+    </select>
+    <div class="filter-sep"></div>
+    <select id="sort-sel" style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 8px;border-radius:20px">
+      <option value="urgency">Urgency</option><option value="deadline">Deadline</option>
+      <option value="priority">Priority</option><option value="effort">Effort</option>
+      <option value="created">Created</option><option value="title">Title</option>
+    </select>
+    <input type="text" id="t-q" placeholder="Search…" style="font-size:11px;width:110px;padding:3px 8px;border-radius:20px">`;
+  tb.querySelectorAll('[data-fc]').forEach(b=>b.addEventListener('click',()=>{tb.querySelectorAll('[data-fc]').forEach(x=>x.classList.remove('active'));b.classList.add('active');TF.cat=b.dataset.fc;loadAllTasks()}));
+  tb.querySelectorAll('[data-fs]').forEach(b=>b.addEventListener('click',()=>{tb.querySelectorAll('[data-fs]').forEach(x=>x.classList.remove('active'));b.classList.add('active');TF.status=b.dataset.fs;loadAllTasks()}));
+  $('tb-cats')?.addEventListener('click',openCatModal);
+  $('ef-sel')?.addEventListener('change',()=>{const v=$('ef-sel').value;if(!v){TF.efMin='';TF.efMax='';}else{const[a,b]=v.split(',');TF.efMin=a;TF.efMax=b;}loadAllTasks()});
+  $('sort-sel')?.addEventListener('change',()=>{TF.sort=$('sort-sel').value;loadAllTasks()});
+  let qtm;$('t-q')?.addEventListener('input',()=>{clearTimeout(qtm);qtm=setTimeout(()=>{TF.q=$('t-q').value;loadAllTasks()},250)});
+}
+async function loadAllTasks(){
+  let url=`/api/tasks?status=${TF.status}&sort=${TF.sort}`;
+  if(TF.cat)url+=`&category=${TF.cat}`;
+  if(TF.efMin!=='')url+=`&effort_min=${TF.efMin}`;
+  if(TF.efMax!==''&&TF.efMax!=='9999')url+=`&effort_max=${TF.efMax}`;
+  const tasks=await api(url);
+  const q=TF.q.toLowerCase();
+  const filt=q?tasks.filter(t=>t.title.toLowerCase().includes(q)||(t.tags||[]).some(tg=>tg.includes(q))):tasks;
+  const list=$('all-tasks');list.innerHTML='';
+  if(!filt.length){list.innerHTML='<div class="empty"><div class="empty-i">✓</div><div class="empty-t">No tasks found</div></div>';return}
+  filt.forEach(t=>list.appendChild(makeTaskCard(t)));
+}
+
+// ══════════════════════════════════════════════════════════
+// TASK MODAL
+// ══════════════════════════════════════════════════════════
+let editTaskId=null;
+function openTaskModal(task=null){
+  editTaskId=task?.id||null;
+  $('tm-lbl').textContent=task?'Edit Task':'New Task';
+  $('tm-title').value=task?.title||'';
+  populateCats();
+  if(task?.category)$('tm-cat').value=task.category;
+  $('tm-pri').value=task?.priority||3;$('tm-dl').value=task?.deadline||'';
+  $('tm-sched').value=task?.scheduled||'';$('tm-effort').value=task?.effort||30;
+  $('tm-tags').value=(task?.tags||[]).join(', ');$('tm-notes').value=task?.notes||'';
+  $('tm-delete').style.display=task?'':'none';
+  $('task-modal').classList.add('open');setTimeout(()=>$('tm-title').focus(),50);
+}
+$('tm-cancel').addEventListener('click',()=>$('task-modal').classList.remove('open'));
+$('task-modal').addEventListener('click',e=>{if(e.target===$('task-modal'))$('task-modal').classList.remove('open')});
+$('tm-save').addEventListener('click',async()=>{
+  const title=$('tm-title').value.trim();if(!title)return $('tm-title').focus();
+  const body={title,category:$('tm-cat').value,priority:parseInt($('tm-pri').value),
+    deadline:$('tm-dl').value||null,scheduled:$('tm-sched').value||null,
+    effort:parseInt($('tm-effort').value),tags:$('tm-tags').value.split(',').map(s=>s.trim()).filter(Boolean),notes:$('tm-notes').value};
+  if(editTaskId)await api(`/api/tasks/${editTaskId}`,{method:'PATCH',body});
+  else await api('/api/tasks',{method:'POST',body});
+  toast(editTaskId?'✓ Updated':'✓ Added');$('task-modal').classList.remove('open');
+  if(activeTab==='today')loadTodayView();else loadAllTasks();loadStats();
+});
+$('tm-delete').addEventListener('click',async()=>{
+  if(!editTaskId||!confirm('Delete this task?'))return;
+  await api(`/api/tasks/${editTaskId}`,{method:'DELETE'});
+  $('task-modal').classList.remove('open');toast('Deleted');loadStats();
+  if(activeTab==='today')loadTodayView();else loadAllTasks();
+});
+$('add-fab').addEventListener('click',()=>openTaskModal());
+$('qc-plus').addEventListener('click',()=>openTaskModal());
+$('q-inp').addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;const title=$('q-inp').value.trim();if(!title)return;
+  api('/api/tasks',{method:'POST',body:{title,category:defaultCategory,priority:3,effort:30}}).then(()=>{
+    $('q-inp').value='';toast('✓ Captured');loadStats();
+    if(activeTab==='today')loadTodayView();if(activeTab==='tasks')loadAllTasks();
+  });
+});
+
+// ══════════════════════════════════════════════════════════
+// TIME PICKER
+// ══════════════════════════════════════════════════════════
+/**
+ * TimePicker: dual scroll-column (hours / minutes) with a paired text input.
+ *
+ * Scroll debounce is 200 ms to reduce jumpiness.
+ * Text input: typing 2 hour digits auto-inserts ':' and moves focus to minutes.
+ * Default is 00:00 (not whatever the scroll happens to land on).
+ */
+class TimePicker{
+  constructor(wrap,ti){
+    this.wrap=wrap;this.ti=ti;
+    this.hours=[...Array(24)].map((_,i)=>String(i).padStart(2,'0'));
+    this.mins =[...Array(12)].map((_,i)=>String(i*5).padStart(2,'0'));
+    this._h=0;this._m=0;  // default 00:00
+    this.build();
+  }
+  build(){
+    this.hCol=this._mkCol(this.hours,3);
+    this.mCol=this._mkCol(this.mins,3);
+    const sep=document.createElement('div');sep.className='sp-sep';sep.textContent=':';
+    this.wrap.appendChild(this.hCol);this.wrap.appendChild(sep);this.wrap.appendChild(this.mCol);
+    this._setup(this.hCol,this.hours.length);
+    this._setup(this.mCol,this.mins.length);
+    if(this.ti)this._setupTextInput();
+  }
+  _mkCol(vals,copies){
+    const col=document.createElement('div');col.className='sp-col';col.tabIndex=0;
+    for(let c=0;c<copies;c++)vals.forEach(v=>{const el=document.createElement('div');el.className='sp-item';el.textContent=v;col.appendChild(el)});
+    return col;
+  }
+  _setup(col,count){
+    const copyH=count*36;let adj=false;
+    col.addEventListener('scroll',()=>{
+      if(adj)return;
+      const st=col.scrollTop;
+      // Re-centre to middle copy to give illusion of infinite scroll
+      if(st<copyH*.6){adj=true;col.scrollTop=st+copyH;setTimeout(()=>adj=false,0)}
+      else if(st>=copyH*2-.4*copyH){adj=true;col.scrollTop=st-copyH;setTimeout(()=>adj=false,0)}
+      // Debounce 200 ms to avoid jitter from inertia scrolling
+      clearTimeout(col._snp);
+      col._snp=setTimeout(()=>{
+        const snap=Math.round(col.scrollTop/36)*36;
+        col.scrollTo({top:snap,behavior:'smooth'});
+        this._read();this._syncTI();
+      },200);
+    },{passive:true});
+    col.addEventListener('keydown',e=>{
+      if(e.key==='ArrowDown'){e.preventDefault();col.scrollBy({top:36,behavior:'smooth'})}
+      if(e.key==='ArrowUp')  {e.preventDefault();col.scrollBy({top:-36,behavior:'smooth'})}
+    });
+  }
+  /**
+   * Text input smart handling:
+   * - Typing 2 digits for hours auto-inserts ':' and focuses minutes portion.
+   * - Backspacing past ':' removes it to let the user retype hours.
+   * - On blur, parse and sync the scroll wheels.
+   */
+  _setupTextInput(){
+    const ti=this.ti;
+    ti.addEventListener('keydown',e=>{
+      const v=ti.value;const pos=ti.selectionStart;
+      // After 2 hour digits, auto-insert colon and jump to minutes
+      if(e.key.match(/\d/)&&pos===2&&!v.includes(':')){
+        e.preventDefault();
+        ti.value=v.slice(0,2)+':'+e.key+'0';
+        ti.setSelectionRange(4,5);
+      }
+      // Backspace past colon: remove it so user can re-enter hours
+      if(e.key==='Backspace'&&pos===3&&v[2]===':'){
+        e.preventDefault();ti.value=v.slice(0,2);ti.setSelectionRange(2,2);
+      }
+      if(e.key==='Enter'){ti.blur()}
+    });
+    ti.addEventListener('input',()=>{
+      // Auto-insert colon after 2 digits if user pastes/types fast
+      if(/^\d{2}$/.test(ti.value)){ti.value=ti.value+':';ti.setSelectionRange(3,3)}
+      if(/^\d{4}$/.test(ti.value)){ti.value=ti.value.slice(0,2)+':'+ti.value.slice(2);ti.setSelectionRange(5,5)}
+    });
+    ti.addEventListener('blur',()=>this._fromText());
+  }
+  _getIdx(col,count){return((Math.round(col.scrollTop/36)+2)%count+count)%count}
+  _read(){
+    this._h=parseInt(this.hours[this._getIdx(this.hCol,24)]);
+    this._m=parseInt(this.mins[ this._getIdx(this.mCol,12)]);
+  }
+  getValue(){return`${String(this._h).padStart(2,'0')}:${String(this._m).padStart(2,'0')}`}
+  setValue(t){
+    if(!t||!t.includes(':'))return;
+    const[hs,ms]=t.split(':');
+    const h=Math.max(0,Math.min(23,parseInt(hs)||0));
+    const mRaw=parseInt(ms)||0;
+    const m=Math.round(mRaw/5)*5%60;
+    this._h=h;this._m=m;
+    const hIdx=h,mIdx=Math.round(m/5);
+    // Scroll to middle copy + offset so the value lands at centre
+    setTimeout(()=>{
+      this.hCol.scrollTop=(this.hours.length-2+hIdx)*36;
+      this.mCol.scrollTop=(this.mins.length -2+mIdx)*36;
+      this._syncTI();
+    },40);
+  }
+  _syncTI(){if(this.ti)this.ti.value=this.getValue()}
+  _fromText(){
+    const raw=(this.ti?.value||'').trim();
+    const parts=raw.includes(':')?raw.split(':'):[raw.slice(0,2),raw.slice(2)];
+    const h=Math.max(0,Math.min(23,parseInt(parts[0])||0));
+    const m=Math.max(0,Math.min(59,parseInt(parts[1])||0));
+    this.setValue(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+  }
+  enable() {[this.wrap,this.ti].forEach(el=>{if(el){el.style.opacity='1';el.style.pointerEvents=''}})}
+  disable(){[this.wrap,this.ti].forEach(el=>{if(el){el.style.opacity='0.3';el.style.pointerEvents='none'}})}
+}
+
+let tpS=null,tpE=null;
+function initTP(){
+  if(tpS)return;
+  tpS=new TimePicker($('tp-s'),$('em-st-txt'));
+  tpE=new TimePicker($('tp-e'),$('em-et-txt'));
+  // Default end 1 hour after start — both start at 00:00 until set by caller
+}
+
+/** Validate that end datetime is strictly after start datetime. */
+function validateTimes(){
+  if($('em-allday').checked){$('em-time-err').style.display='none';return true}
+  const sd=$('em-date').value, ed=$('em-end-date').value||sd;
+  const st=tpS?.getValue()||'00:00', et=tpE?.getValue()||'00:00';
+  const ok=new Date(`${sd}T${st}`)<new Date(`${ed}T${et}`);
+  $('em-time-err').style.display=ok?'none':'';return ok;
+}
+
+/**
+ * Handle all-day toggle: multi-day events are forced to all-day.
+ * Show/hide the end-date field and time pickers accordingly.
+ */
+/** Toggle time pickers when all-day is checked. */
+$('em-allday').addEventListener('change',()=>{
+  const ad=$('em-allday').checked;
+  const stw=$('em-start-time-wrap'), etw=$('em-end-time-wrap');
+  if(stw) stw.style.display=ad?'none':'flex';
+  if(etw) etw.style.display=ad?'none':'flex';
+  if(ad){tpS?.disable();tpE?.disable()}else{tpS?.enable();tpE?.enable()}
+  checkNextDay();
+});
+
+/** Show 'ends next day' warning if end date is after start date. */
+function checkNextDay(){
+  const sd=$('em-date').value, ed=$('em-end-date').value;
+  const warn=$('em-nextday-warn');
+  if(warn&&sd&&ed&&ed>sd) warn.style.display='';
+  else if(warn) warn.style.display='none';
+}
+$('em-end-date').addEventListener('change', checkNextDay);
+$('em-date').addEventListener('change', ()=>{
+  // If end date is not set, default it to start date
+  if(!$('em-end-date').value) $('em-end-date').value=$('em-date').value;
+  checkNextDay();
+});
+
+// ══════════════════════════════════════════════════════════
+// EVENTS MODAL
+// ══════════════════════════════════════════════════════════
+let editEvId=null,editEvMode='add',pendingEv=null,editEvDate=null;
+function showRecurBox(type){
+  $('recur-box').classList.toggle('open',!!type);
+  ['rd-daily','rd-weekly','rd-mwd','rd-yearly'].forEach(id=>{const el=$(id);if(el)el.style.display='none'});
+  if(type==='daily')$('rd-daily').style.display='';
+  if(type==='weekly')$('rd-weekly').style.display='';
+  if(type==='monthly_weekday')$('rd-mwd').style.display='';
+  if(type==='yearly')$('rd-yearly').style.display='';
+}
+$('em-recur-type').addEventListener('change',()=>showRecurBox($('em-recur-type').value));
+document.querySelectorAll('.wd-btn').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();b.classList.toggle('on')}));
+
+function buildRecurRule(){
+  const type=$('em-recur-type').value;if(!type)return'';
+  if(type==='daily')return JSON.stringify({freq:'daily',interval:parseInt($('rd-dn').value)||1});
+  if(type==='weekly'){const days=[...document.querySelectorAll('.wd-btn.on')].map(b=>parseInt(b.dataset.wd));const d=parseISO($('em-date').value||isoDate(new Date()));const wd=d.getDay()===0?6:d.getDay()-1;return JSON.stringify({freq:'weekly',interval:parseInt($('rd-wn').value)||1,days:days.length?days:[wd]})}
+  if(type==='monthly_date')return JSON.stringify({freq:'monthly',by:'date'});
+  if(type==='monthly_weekday')return JSON.stringify({freq:'monthly',by:'weekday',nth:parseInt($('rd-nth').value),day:parseInt($('rd-wd').value)});
+  if(type==='yearly')return JSON.stringify({freq:'yearly',interval:parseInt($('rd-yn').value)||1});
+  return'';
+}
+
+function openEvAdd(date){
+  editEvId=null;editEvMode='add';editEvDate=date;
+  $('em-lbl').textContent='New Event';$('em-title').value='';
+  $('em-recur-type').value='';showRecurBox('');$('em-delete').style.display='none';
+  $('em-allday').checked=false;
+  populateCats();initTP();tpS?.enable();tpE?.enable();
+
+  // Default start = next whole hour from now if date is today, else 09:00
+  const isToday=date===isoDate(new Date());
+  let startH=9,endH=10;
+  if(isToday){const now=new Date();startH=now.getHours()+(now.getMinutes()>0?1:0);if(startH>=24)startH=23;endH=startH+1;}
+  const startStr=String(startH).padStart(2,'0')+':00';
+  const endH24=endH%24;
+  const endDate=endH>=24?isoDate(new Date(parseISO(date).getTime()+86400000)):date;
+
+  $('em-date').value=date;$('em-end-date').value=endDate;
+  tpS.setValue(startStr);tpE.setValue(String(endH24).padStart(2,'0')+':00');
+  checkNextDay();
+
+  // Show/hide time wrappers
+  const stw=$('em-start-time-wrap'),etw=$('em-end-time-wrap');
+  if(stw)stw.style.display='flex';if(etw)etw.style.display='flex';
+
+  const d=parseISO(date),wd=d.getDay()===0?6:d.getDay()-1;
+  document.querySelectorAll('.wd-btn').forEach(b=>b.classList.toggle('on',parseInt(b.dataset.wd)===wd));
+  $('ev-modal').classList.add('open');setTimeout(()=>$('em-title').focus(),50);
+}
+
+function openEvEdit(ev,date){
+  if(ev.is_recurring||ev.recur){pendingEv=ev;editEvDate=date;$('red-overlay').classList.add('open');return}
+  _openEvForm(ev,date,'edit');
+}
+$('red-cancel').addEventListener('click',()=>$('red-overlay').classList.remove('open'));
+$('red-one').addEventListener('click',()=>{$('red-overlay').classList.remove('open');_openEvForm(pendingEv,editEvDate,'one')});
+$('red-future').addEventListener('click',()=>{$('red-overlay').classList.remove('open');_openEvForm(pendingEv,editEvDate,'future')});
+$('red-all').addEventListener('click',()=>{$('red-overlay').classList.remove('open');_openEvForm(pendingEv,editEvDate,'all')});
+
+function _openEvForm(ev,date,mode){
+  editEvId=ev.id;editEvMode=mode;editEvDate=date;
+  $('em-lbl').textContent={one:'Edit This Occurrence',future:'Edit From Here',all:'Edit Event',edit:'Edit Event'}[mode]||'Edit Event';
+  $('em-title').value=ev.title||'';
+  populateCats();if(ev.category)$('em-cat').value=ev.category;
+
+  // Start date comes from the occurrence date (for recurring), else from the record
+  const startDate=date||ev.start_dt?.slice(0,10)||'';
+  $('em-date').value=startDate;
+
+  // End date: use stored end_dt date, defaulting to start date
+  const endD=ev.end_dt?.slice(0,10)||startDate;
+  $('em-end-date').value=endD;
+
+  const ad=!!(ev.all_day);
+  $('em-allday').checked=ad;
+
+  const stw=$('em-start-time-wrap'),etw=$('em-end-time-wrap');
+  if(stw)stw.style.display=ad?'none':'flex';
+  if(etw)etw.style.display=ad?'none':'flex';
+
+  initTP();
+  if(ad){tpS?.disable();tpE?.disable()}else{tpS?.enable();tpE?.enable()}
+  tpS?.setValue(ev.start_dt?.slice(11,16)||'09:00');
+  tpE?.setValue(ev.end_dt?.slice(11,16)||'10:00');
+  checkNextDay();
+
+  if(ev.recur&&mode!=='one'){try{const r=JSON.parse(ev.recur);$('em-recur-type').value=r.freq==='daily'?'daily':r.freq==='weekly'?'weekly':r.freq==='monthly'?r.by==='date'?'monthly_date':'monthly_weekday':'yearly';showRecurBox($('em-recur-type').value)}catch{}}
+  else{$('em-recur-type').value='';showRecurBox('')}
+  $('em-delete').style.display='';$('em-delete').dataset.m=mode;
+  $('ev-modal').classList.add('open');setTimeout(()=>$('em-title').focus(),50);
+}
+
+$('em-cancel').addEventListener('click',()=>$('ev-modal').classList.remove('open'));
+$('ev-modal').addEventListener('click',e=>{if(e.target===$('ev-modal'))$('ev-modal').classList.remove('open')});
+
+$('em-save').addEventListener('click',async()=>{
+  const title=$('em-title').value.trim();if(!title)return $('em-title').focus();
+  const sd=$('em-date').value;
+  const ed=$('em-end-date').value||sd;
+  const ad=$('em-allday').checked;
+  const st=tpS?.getValue()||'00:00', et=tpE?.getValue()||'00:00';
+  if(!ad&&!validateTimes())return;
+
+  // Build ISO datetimes. All-day events get T00:00 timestamps.
+  // Timed events keep their actual start/end datetimes (may span midnight).
+  const startDt=ad?`${sd}T00:00`:`${sd}T${st}`;
+  const endDt  =ad?`${ed}T00:00`:`${ed}T${et}`;
+  const recur=buildRecurRule();
+
+  // is_multiday: timed event that crosses midnight (end date != start date)
+  const isMultiday=!ad&&ed!==sd;
+
+  const payload={title,category:$('em-cat').value,start_dt:startDt,end_dt:endDt,all_day:ad?1:0,recur};
+  if(!editEvId){
+    await api('/api/events',{method:'POST',body:payload});
+    toast(recur?'✓ Recurring event added ↻':'✓ Event added');
+  }else{
+    const mode=editEvMode;
+    if(mode==='all'||mode==='edit')await api(`/api/events/${editEvId}`,{method:'PATCH',body:payload});
+    else if(mode==='future'){
+      const prev=isoDate(new Date(parseISO(editEvDate).getTime()-86400000));
+      await api(`/api/events/${editEvId}`,{method:'PATCH',body:{recur_end:prev}});
+      await api('/api/events',{method:'POST',body:payload});
+    }else if(mode==='one'){
+      const ex=JSON.parse(pendingEv?.exceptions||'[]');ex.push(editEvDate);
+      await api(`/api/events/${editEvId}`,{method:'PATCH',body:{exceptions:ex}});
+      await api('/api/events',{method:'POST',body:{...payload,recur:''}});
+    }
+    toast('✓ Updated');
+  }
+  $('ev-modal').classList.remove('open');
+  loadTodayView();if(activeTab==='week')loadWeekView();if(activeTab==='month')loadMonthView();
+});
+
+$('em-delete').addEventListener('click',async()=>{
+  const mode=$('em-delete').dataset.m||'all';
+  if(mode==='one'){const ex=JSON.parse(pendingEv?.exceptions||'[]');ex.push(editEvDate);await api(`/api/events/${editEvId}`,{method:'PATCH',body:{exceptions:ex}});toast('Occurrence removed')}
+  else if(mode==='future'){const prev=isoDate(new Date(parseISO(editEvDate).getTime()-86400000));await api(`/api/events/${editEvId}`,{method:'PATCH',body:{recur_end:prev}});toast('Future occurrences removed')}
+  else{if(!confirm('Delete this event?'))return;await api(`/api/events/${editEvId}`,{method:'DELETE'});toast('Deleted')}
+  $('ev-modal').classList.remove('open');
+  loadTodayView();if(activeTab==='week')loadWeekView();if(activeTab==='month')loadMonthView();
+});
+$('add-ev').addEventListener('click',()=>openEvAdd(viewDate));
+
+// ══════════════════════════════════════════════════════════
+// [[LINK]] AUTOCOMPLETE
+// ══════════════════════════════════════════════════════════
+class LinkAC{
+  constructor(getTA){this.getTA=getTA;this.items=[];this.sel=0;this.mStart=-1;this.active=false;this.dd=$('lac')}
+  get ta(){return this.getTA()}
+  async check(){const ta=this.ta;if(!ta)return;const pos=ta.selectionStart,before=ta.value.slice(0,pos);const m=before.match(/\[\[([^\[\]\n]{0,60})$/);if(!m){this.hide();return}this.mStart=pos-m[0].length;const data=await api(`/api/notes/titles?q=${encodeURIComponent(m[1].toLowerCase())}`);this.items=data;this.sel=0;if(data.length)this.show(ta);else{this.dd.innerHTML='<div class="lac-empty">No notes match</div>';this.dd.style.display='block';this.active=true}}
+  show(ta){const r=ta.getBoundingClientRect();this.dd.style.cssText=`left:${r.left}px;top:${r.bottom+4}px;max-width:${Math.min(300,r.width)}px;display:block`;this.dd.innerHTML=this.items.slice(0,10).map((it,i)=>`<div class="lac-item${i===this.sel?' sel':''}" data-i="${i}">${esc(it.title)}</div>`).join('');this.active=true;this.dd.querySelectorAll('.lac-item').forEach(el=>el.addEventListener('mousedown',e=>{e.preventDefault();this.insert(parseInt(el.dataset.i))}))}
+  hide(){this.dd.style.display='none';this.active=false}
+  key(e){if(!this.active)return;if(e.key==='ArrowDown'){e.preventDefault();this.sel=Math.min(this.sel+1,this.items.length-1);this.show(this.ta)}if(e.key==='ArrowUp'){e.preventDefault();this.sel=Math.max(this.sel-1,0);this.show(this.ta)}if(e.key==='Enter'&&this.items.length){e.preventDefault();this.insert(this.sel)}if(e.key==='Escape')this.hide()}
+  insert(idx){const ta=this.ta;if(!ta||!this.items[idx])return;const pos=ta.selectionStart,before=ta.value.slice(0,this.mStart),after=ta.value.slice(pos);const ins=`[[${this.items[idx].title}]]`;ta.value=before+ins+after;const np=this.mStart+ins.length;ta.setSelectionRange(np,np);ta.dispatchEvent(new Event('input'));this.hide()}
+}
+const jLAC=new LinkAC(()=>$('j-ta'));
+const nLAC=new LinkAC(()=>document.querySelector('#n-editor-area .n-ta'));
+function setupLAC(ta,lac){if(!ta||ta._lac)return;ta._lac=true;ta.addEventListener('input',()=>lac.check());ta.addEventListener('keydown',e=>lac.key(e));ta.addEventListener('blur',()=>setTimeout(()=>lac.hide(),200))}
+setupLAC($('j-ta'),jLAC);
+
+// ══════════════════════════════════════════════════════════
+// PREVIEW
+// ══════════════════════════════════════════════════════════
+function renderPreview(text,onLink,onTag){
+  let html=esc(text);
+  html=html.replace(/\[\[([^\[\]]+)\]\]/g,(_,t)=>`<span class="p-link" data-link="${t}">\uD83D\uDD17 ${t}</span>`);
+  html=html.replace(/(^|\s)(#&quot;([^&]+)&quot;|#([A-Za-z][A-Za-z0-9_\-\.]*))(?=\s|$|[,.])/gm,(_,sp,full,q,w)=>{const tag=q||w;return`${sp}<span class="p-tag" data-tag="${tag}">${full}</span>`});
+  const div=document.createElement('div');div.innerHTML=html;
+  div.querySelectorAll('.p-link').forEach(el=>el.addEventListener('click',()=>onLink(el.dataset.link)));
+  div.querySelectorAll('.p-tag').forEach(el=>el.addEventListener('click',()=>onTag(el.dataset.tag)));
+  return div.innerHTML;
+}
+
+// ══════════════════════════════════════════════════════════
+// JOURNAL
+// ══════════════════════════════════════════════════════════
+const JOURNAL_TEMPLATE=`## Today\n\n### What I worked on\n\n\n### What went well\n\n\n### What's on my mind\n\n\n### Tomorrow's priorities\n\n`;
+let jDate=isoDate(new Date()),jSaveTm=null,jDates=[],jPrevMode=false;
+
+async function loadJournal(iso){
+  jDate=iso;const d=parseISO(iso);
+  $('j-disp').textContent=d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.querySelectorAll('.j-date-item').forEach(el=>el.classList.toggle('active',el.dataset.d===iso));
+  const data=await api(`/api/journal/${iso}`);
+  const ta=$('j-ta');ta.value=data.body||(iso===isoDate(new Date())?JOURNAL_TEMPLATE:'');
+  $('j-save-st').textContent=data.exists?'Saved':'New entry';
+  jPrevMode=false;$('j-prev-btn').textContent='Preview';$('j-prev-btn').classList.remove('active');
+  ta.style.display='';$('j-preview').classList.remove('active');$('j-preview').innerHTML='';
+  setupLAC(ta,jLAC);loadJTagsPanel();ta.focus();
+}
+async function loadJDates(){
+  jDates=await api('/api/journal/dates');const list=$('j-date-list');list.innerHTML='';
+  const ti=isoDate(new Date());const all=jDates.includes(ti)?jDates:[ti,...jDates];
+  all.forEach(iso=>{const d=parseISO(iso),el=document.createElement('div');el.className='j-date-item';el.dataset.d=iso;el.textContent=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});el.addEventListener('click',()=>loadJournal(iso));list.appendChild(el)});
+  document.querySelectorAll('.j-date-item').forEach(el=>el.classList.toggle('active',el.dataset.d===jDate));
+}
+$('j-ta').addEventListener('input',()=>{$('j-save-st').textContent='Unsaved…';clearTimeout(jSaveTm);jSaveTm=setTimeout(saveJournal,1200);clearTimeout(jTagTm);jTagTm=setTimeout(loadJTagsPanel,600)});
+async function saveJournal(){const body=$('j-ta').value;await api(`/api/journal/${jDate}`,{method:'PUT',body:{body}});$('j-save-st').textContent='Saved ✓';if(!jDates.includes(jDate))loadJDates()}
+$('j-prev').addEventListener('click',()=>{const d=parseISO(jDate);d.setDate(d.getDate()-1);loadJournal(isoDate(d))});
+$('j-next').addEventListener('click',()=>{const d=parseISO(jDate);d.setDate(d.getDate()+1);loadJournal(isoDate(d))});
+$('j-today').addEventListener('click',()=>loadJournal(isoDate(new Date())));
+$('j-prev-btn').addEventListener('click',()=>{
+  jPrevMode=!jPrevMode;$('j-prev-btn').classList.toggle('active',jPrevMode);$('j-prev-btn').textContent=jPrevMode?'Edit':'Preview';
+  const ta=$('j-ta'),prev=$('j-preview');ta.style.display=jPrevMode?'none':'';
+  if(jPrevMode){prev.innerHTML=renderPreview(ta.value,async title=>{const data=await api('/api/notes');const n=data.find(x=>x.title.toLowerCase()===title.toLowerCase());if(n){document.querySelector('[data-tab="notes"]').click();setTimeout(async()=>{const nd=await api('/api/notes');openNoteInTab(nd.find(x=>x.id===n.id))},100)}},async tag=>{document.querySelector('[data-tab="notes"]').click();setTimeout(()=>loadNotes('',tag),100);toast(`Filter: #${tag}`)});prev.classList.add('active')}
+  else{prev.classList.remove('active');prev.innerHTML=''}
+});
+let jSrTm;
+$('j-search').addEventListener('input',async()=>{
+  clearTimeout(jSrTm);const q=$('j-search').value.trim();
+  if(!q){$('j-sr-res').style.display='none';$('j-date-list').style.display='';return}
+  jSrTm=setTimeout(async()=>{
+    const rs=await api(`/api/journal/search?q=${encodeURIComponent(q)}`);
+    $('j-date-list').style.display='none';$('j-sr-res').style.display='';const el=$('j-sr-res');el.innerHTML='';
+    if(!rs.length){el.innerHTML='<div style="padding:12px;color:var(--text-dim);font-size:12px;font-family:\'IBM Plex Mono\',monospace">No results</div>';return}
+    rs.forEach(r=>{const item=document.createElement('div');item.className='sr-item';item.innerHTML=`<div class="sr-date">${esc(r.date)}</div><div class="sr-snippet">${esc(r.snippet)}</div>`;item.addEventListener('click',()=>{$('j-search').value='';$('j-date-list').style.display='';$('j-sr-res').style.display='none';loadJournal(r.date)});el.appendChild(item)});
+  },300);
+});
+let jTagTm;
+async function loadJTagsPanel(){
+  const panel=$('j-tags-panel');const body=$('j-ta').value||'';const inDoc=new Set(extractTags(body));
+  const data=await api('/api/journal/tags');const recent=data.recent||[],top=data.top||[];panel.innerHTML='';
+  function addTP(t,cls){const el=document.createElement('span');el.className=`tp-tag ${cls}`;el.textContent='#'+t;el.title='Click to insert at cursor';el.addEventListener('click',()=>insertAt($('j-ta'),'#'+t+' '));panel.appendChild(el)}
+  if(inDoc.size){panel.innerHTML+='<span class="tp-lbl">IN ENTRY:</span>';[...inDoc].forEach(t=>addTP(t,''))}
+  if(recent.length){panel.innerHTML+='<span class="tp-lbl" style="margin-left:8px">RECENT:</span>';recent.slice(0,6).forEach(t=>addTP(t,'recent'))}
+  if(top.length){panel.innerHTML+='<span class="tp-lbl" style="margin-left:8px">TOP:</span>';top.filter(t=>!recent.includes(t)).slice(0,8).forEach(t=>addTP(t,''))}
+  if(!inDoc.size&&!recent.length&&!top.length)panel.innerHTML='<span class="tp-lbl">Use #tags in your entry</span>';
+}
+function insertAt(ta,txt){if(!ta)return;const s=ta.selectionStart,b=ta.value.slice(0,s),a=ta.value.slice(ta.selectionEnd);ta.value=b+txt+a;ta.setSelectionRange(s+txt.length,s+txt.length);ta.focus();ta.dispatchEvent(new Event('input'))}
+
+// ══════════════════════════════════════════════════════════
+// NOTES — tabs + back/forward navigation
+// ══════════════════════════════════════════════════════════
+/**
+ * noteTabs: array of { id, title, body, tags, ... } — one entry per open tab.
+ * activeTabIdx: index into noteTabs.
+ * noteHistory: array of note IDs visited in the active tab (for back/forward).
+ * noteHistoryPos: current position in noteHistory.
+ */
+let noteTabs    = [];   // [{note object}]
+let activeTabIdx = -1;
+let noteHistory  = [];  // note IDs in visit order
+let noteHistPos  = -1;
+
+let allNotes     = [];
+let curNoteTitle = '';
+let noteSaveTm   = null;
+
+async function loadNotes(q='',tag=''){
+  let url='/api/notes';const ps=[];
+  if(q)ps.push(`q=${encodeURIComponent(q)}`);
+  if(tag)ps.push(`tag=${encodeURIComponent(tag)}`);
+  if(ps.length)url+='?'+ps.join('&');
+  allNotes=await api(url);renderNList(allNotes);loadNTagBar();
+}
+
+function renderNList(notes){
+  const list=$('n-list');list.innerHTML='';
+  if(!notes.length){list.innerHTML='<div style="padding:12px;color:var(--text-dim);font-size:12px;font-family:\'IBM Plex Mono\',monospace">No notes</div>';return}
+  const activeId=noteTabs[activeTabIdx]?.id;
+  notes.forEach(n=>{
+    const el=document.createElement('div');el.className='n-item'+(n.id===activeId?' active':'');el.dataset.nid=n.id;
+    const tags=n.tags?n.tags.split(',').filter(Boolean):[];
+    el.innerHTML=`<div class="n-item-title">${esc(n.title||'Untitled')}</div><div class="n-item-date">${esc((n.updated_at||'').slice(0,10))}</div><div class="n-item-tags">${tags.slice(0,3).map(t=>`<span class="tag-p">${esc(t)}</span>`).join('')}</div>`;
+    el.addEventListener('click',()=>openNoteInTab(n));list.appendChild(el);
+  });
+}
+
+async function loadNTagBar(){
+  const data=await api('/api/notes/tags');const bar=$('n-tag-bar');bar.innerHTML='';
+  const all=[...new Set([...(data.recent||[]),(data.top||[])])].flat().filter((v,i,a)=>a.indexOf(v)===i).slice(0,14);
+  if(!all.length)return;
+  const ab=document.createElement('span');ab.className='tp-tag';ab.textContent='all';
+  ab.style.cssText='cursor:pointer;border-color:var(--accent);color:var(--accent)';
+  ab.addEventListener('click',()=>loadNotes());bar.appendChild(ab);
+  all.forEach(t=>{const el=document.createElement('span');el.className='tp-tag';el.textContent='#'+t;el.addEventListener('click',()=>loadNotes('',t));bar.appendChild(el)});
+}
+
+/**
+ * Open a note.  If it's already in a tab, switch to that tab.
+ * Otherwise open it in the current tab (or create a new tab if none exist).
+ * Also updates the back/forward history stack.
+ */
+function openNoteInTab(note,pushHistory=true){
+  if(!note)return;
+  // Save any unsaved changes in current tab before switching
+  const curTabNote=noteTabs[activeTabIdx];
+  if(curTabNote){
+    const titleEl=document.querySelector('#n-editor-area #n-title');
+    const bodyEl =document.querySelector('#n-editor-area .n-ta');
+    const tagsEl =document.querySelector('#n-editor-area #n-tags');
+    if(titleEl)curTabNote._title=titleEl.value;
+    if(bodyEl) curTabNote._body =bodyEl.value;
+    if(tagsEl) curTabNote._tags =tagsEl.value;
+  }
+
+  // Check if this note is already open in a tab
+  const existing=noteTabs.findIndex(t=>t.id===note.id);
+  if(existing!==-1){
+    activeTabIdx=existing;
+  } else {
+    // Open in current slot (replace) or create first tab
+    if(noteTabs.length===0||activeTabIdx===-1){
+      noteTabs.push({...note});activeTabIdx=noteTabs.length-1;
+    } else {
+      noteTabs.splice(activeTabIdx+1,0,{...note});
+      activeTabIdx=activeTabIdx+1;
+    }
+  }
+
+  // History: truncate forward stack and push
+  if(pushHistory){
+    noteHistory=noteHistory.slice(0,noteHistPos+1);
+    noteHistory.push(note.id);
+    noteHistPos=noteHistory.length-1;
+  }
+
+  renderNoteTabs();
+  renderNoteEditor(noteTabs[activeTabIdx]);
+  renderNList(allNotes);
+}
+
+/** Render the tab strip above the note editor. */
+function renderNoteTabs(){
+  const bar=$('n-tabs-bar');bar.innerHTML='';
+  if(!noteTabs.length)return;
+  noteTabs.forEach((n,i)=>{
+    const tab=document.createElement('div');tab.className='n-tab'+(i===activeTabIdx?' active':'');
+    const title=document.createElement('span');title.className='n-tab-title';title.textContent=n.title||'Untitled';title.title=n.title||'Untitled';
+    const close=document.createElement('button');close.className='n-tab-close';close.textContent='×';close.title='Close tab';
+    close.addEventListener('click',e=>{e.stopPropagation();closeNoteTab(i)});
+    tab.appendChild(title);tab.appendChild(close);
+    tab.addEventListener('click',()=>{activeTabIdx=i;renderNoteTabs();renderNoteEditor(noteTabs[i]);renderNList(allNotes)});
+    bar.appendChild(tab);
+  });
+}
+
+function closeNoteTab(idx){
+  noteTabs.splice(idx,1);
+  if(noteTabs.length===0){
+    activeTabIdx=-1;
+    $('n-editor-area').innerHTML='<div class="empty"><div class="empty-i">◫</div><div class="empty-t">Select or create a note</div></div>';
+    renderNoteTabs();renderNList(allNotes);return;
+  }
+  activeTabIdx=Math.min(idx,noteTabs.length-1);
+  renderNoteTabs();renderNoteEditor(noteTabs[activeTabIdx]);renderNList(allNotes);
+}
+
+/** Render the note editor for a given note object. */
+function renderNoteEditor(note){
+  if(!note)return;
+  curNoteTitle=note.title||'';  // track current tab's saved title for rename detection
+  const area=$('n-editor-area');
+  area.innerHTML=`
+    <div class="n-ebar">
+      <button class="n-nav-btn" id="n-back" title="Back">‹</button>
+      <button class="n-nav-btn" id="n-fwd"  title="Forward">›</button>
+      <input type="text" id="n-title" value="${esc(note._title||note.title||'')}" placeholder="Note title">
+      <input type="text" class="n-tags-inp" id="n-tags" value="${esc(note._tags||note.tags||'')}" placeholder="explicit tags…">
+      <span class="n-save-st" id="n-save-st">Saved</span>
+      <button class="ep-toggle" id="n-prev-btn">Preview</button>
+      <button class="btn btn-d" id="n-del" style="font-size:11px;padding:3px 9px">Delete</button>
+    </div>
+    <div class="n-bw">
+      <div class="n-body">
+        <textarea class="n-ta" id="note-ta" placeholder="Write anything…\nUse [[Note Title]] to link (type [[ for autocomplete).\n#tags inline — or add explicit tags above."></textarea>
+        <div class="preview-pane" id="n-preview"></div>
+      </div>
+      <div class="n-links-bar" id="n-lk-bar"><span class="n-lk-lbl">LINKS:</span></div>
+      <div class="tags-panel" id="n-tags-panel"><span class="tp-lbl">TAGS —</span></div>
+    </div>`;
+
+  // Set textarea safely via .value
+  const ta=document.querySelector('#n-editor-area .n-ta');
+  ta.value=note._body!==undefined?note._body:(note.body||'');
+
+  // Update back/forward button state
+  const backBtn=$('n-back'),fwdBtn=$('n-fwd');
+  if(backBtn)backBtn.disabled=noteHistPos<=0;
+  if(fwdBtn) fwdBtn.disabled=noteHistPos>=noteHistory.length-1;
+
+  backBtn?.addEventListener('click',()=>{
+    if(noteHistPos<=0)return;
+    noteHistPos--;
+    const prevId=noteHistory[noteHistPos];
+    const prevNote=allNotes.find(n=>n.id===prevId);
+    if(prevNote)openNoteInTab(prevNote,false);
+  });
+  fwdBtn?.addEventListener('click',()=>{
+    if(noteHistPos>=noteHistory.length-1)return;
+    noteHistPos++;
+    const nextId=noteHistory[noteHistPos];
+    const nextNote=allNotes.find(n=>n.id===nextId);
+    if(nextNote)openNoteInTab(nextNote,false);
+  });
+
+  setupLAC(ta,nLAC);
+  ta.addEventListener('input',()=>{schedNoteSave();updateNLinks();debNTagPanel()});
+  $('n-title').addEventListener('input',schedNoteSave);
+  $('n-tags').addEventListener('input',schedNoteSave);
+
+  $('n-del').addEventListener('click',async()=>{
+    if(!confirm('Delete this note?'))return;
+    await api(`/api/notes/${note.id}`,{method:'DELETE'});
+    closeNoteTab(activeTabIdx);toast('Deleted');loadNotes($('n-search').value);
+  });
+
+  let nPrev=false;
+  $('n-prev-btn').addEventListener('click',()=>{
+    nPrev=!nPrev;$('n-prev-btn').classList.toggle('active',nPrev);$('n-prev-btn').textContent=nPrev?'Edit':'Preview';
+    ta.style.display=nPrev?'none':'';const pd=$('n-preview');
+    if(nPrev){
+      pd.innerHTML=renderPreview(ta.value,
+        async title=>{const data=await api('/api/notes');const n=data.find(x=>x.title.toLowerCase()===title.toLowerCase());if(n)openNoteInTab(n);else toast(`Note "${title}" not found`)},
+        async tag=>{loadNotes('',tag);toast(`Filter: #${tag}`)});
+      pd.classList.add('active');
+    }else{pd.classList.remove('active');pd.innerHTML=''}
+  });
+
+  updateNLinks();loadNTagsPanel();
+  setTimeout(()=>ta.focus(),50);
+}
+
+function schedNoteSave(){const s=$('n-save-st');if(s)s.textContent='Unsaved…';clearTimeout(noteSaveTm);noteSaveTm=setTimeout(saveNote,1000)}
+let nTagTm2;function debNTagPanel(){clearTimeout(nTagTm2);nTagTm2=setTimeout(loadNTagsPanel,600)}
+
+async function saveNote(){
+  const note=noteTabs[activeTabIdx];if(!note)return;
+  const title=$('n-title')?.value||'Untitled';
+  const tagsRaw=$('n-tags')?.value||'';
+  const body=document.querySelector('#n-editor-area .n-ta')?.value||'';
+  const explicit=tagsRaw.split(',').map(s=>s.trim().replace(/^#/,'')).filter(Boolean);
+
+  // The authoritative "old title" for rename detection is the tab's saved title,
+  // NOT curNoteTitle (which can drift when tabs are switched).
+  const savedTitle=note.title||'Untitled';
+  if(savedTitle&&savedTitle!==title){
+    const result=await api(`/api/notes/${note.id}/rename`,{method:'POST',body:{old_title:savedTitle,new_title:title}});
+    if(result.updated>0)toast(`Links updated in ${result.updated} note(s)/entries`);
+    // Also update any OTHER open tabs that reference this note by old title
+    noteTabs.forEach((t,i)=>{
+      if(i!==activeTabIdx&&t.body){
+        t._body=(t._body||t.body||'').replaceAll(`[[${savedTitle}]]`,`[[${title}]]`);
+        t.body=(t.body||'').replaceAll(`[[${savedTitle}]]`,`[[${title}]]`);
+      }
+    });
+  }
+
+  await api(`/api/notes/${note.id}`,{method:'PUT',body:{title,body,tags:explicit}});
+  const s=$('n-save-st');if(s)s.textContent='Saved ✓';
+
+  // Keep tab object in sync — title is the single source of truth for rename detection
+  noteTabs[activeTabIdx]={...noteTabs[activeTabIdx],title,tags:explicit.join(','),body};
+  curNoteTitle=title;  // also keep legacy var in sync for this session
+  renderNoteTabs();
+  const idx=allNotes.findIndex(n=>n.id===note.id);
+  if(idx!==-1){allNotes[idx]={...allNotes[idx],title,tags:explicit.join(','),updated_at:new Date().toISOString()};renderNList(allNotes)}
+  else loadNotes($('n-search').value);
+}
+
+function updateNLinks(){
+  const bar=$('n-lk-bar');if(!bar)return;
+  const body=document.querySelector('#n-editor-area .n-ta')?.value||'';
+  const links=new Set();let m;const LR=/\[\[([^\[\]]+)\]\]/g;
+  while((m=LR.exec(body))!==null)links.add(m[1]);
+  bar.innerHTML='<span class="n-lk-lbl">LINKS:</span>';
+  if(!links.size){bar.innerHTML+='<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:var(--text-dim);margin-left:6px">Type [[Title]] to link notes</span>';return}
+  links.forEach(title=>{
+    const chip=document.createElement('span');chip.className='n-lk';chip.textContent=title;
+    chip.addEventListener('click',async()=>{const data=await api('/api/notes');const n=data.find(x=>x.title.toLowerCase()===title.toLowerCase());if(n)openNoteInTab(n);else toast(`"${title}" not found`)});
+    bar.appendChild(chip);
+  });
+}
+
+async function loadNTagsPanel(){
+  const panel=$('n-tags-panel');if(!panel)return;
+  const body=document.querySelector('#n-editor-area .n-ta')?.value||'';
+  const inDoc=new Set(extractTags(body));
+  const expl=($('n-tags')?.value||'').split(',').map(s=>s.trim().replace(/^#/,'')).filter(Boolean);
+  expl.forEach(t=>inDoc.add(t));
+  const data=await api('/api/notes/tags');const recent=data.recent||[],top=data.top||[];panel.innerHTML='';
+  function addTP(t,cls){const el=document.createElement('span');el.className=`tp-tag ${cls}`;el.textContent='#'+t;el.addEventListener('click',()=>insertAt(document.querySelector('#n-editor-area .n-ta'),'#'+t+' '));panel.appendChild(el)}
+  if(inDoc.size){panel.innerHTML+='<span class="tp-lbl">IN NOTE:</span>';[...inDoc].forEach(t=>addTP(t,''))}
+  if(recent.length){panel.innerHTML+='<span class="tp-lbl" style="margin-left:8px">RECENT:</span>';recent.slice(0,6).forEach(t=>addTP(t,'recent'))}
+  if(top.length){panel.innerHTML+='<span class="tp-lbl" style="margin-left:8px">TOP:</span>';top.filter(t=>![...inDoc].includes(t)&&!recent.includes(t)).slice(0,8).forEach(t=>addTP(t,''))}
+  if(!inDoc.size&&!recent.length&&!top.length)panel.innerHTML='<span class="tp-lbl">Top tags appear here</span>';
+}
+
+let nSrTm;
+$('n-search').addEventListener('input',()=>{clearTimeout(nSrTm);nSrTm=setTimeout(()=>loadNotes($('n-search').value),250)});
+$('n-new').addEventListener('click',async()=>{
+  const note=await api('/api/notes',{method:'POST',body:{title:'New note',body:'',tags:[]}});
+  await loadNotes();openNoteInTab(note);setTimeout(()=>{const i=$('n-title');if(i){i.focus();i.select()}},100);
+});
+
+// ── Boot ─────────────────────────────────────────────────
+(async()=>{
+  await loadConfig();
+  applyTheme();  // ensures cat colors apply after config loads
+  refreshDayBtns();loadTodayView();
+  loadJDates();loadJournal(jDate);
+  loadStats();loadNotes();
+})();
+</script>
+</body>
+</html>
