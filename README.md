@@ -1,5 +1,10 @@
 # GTD — Personal Productivity App
 
+GTD has been superseded by planr: https://github.com/danmcne/planr
+
+The idea is almost identical, just a name change.
+
+
 A self-hosted, local-first Getting Things Done app for Ubuntu.  
 Everything runs on your machine at `http://localhost:5000`.  
 All data is stored in plain files and SQLite — no cloud, no accounts.
